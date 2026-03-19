@@ -1,0 +1,7 @@
+Model Loaded
+input_layer_7
+mobilenet_1.00_224
+global_average_pooling2d_3
+dense_6
+dense_7
+Accuracy: 0.9345794320106506

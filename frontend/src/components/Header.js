@@ -1,0 +1,13 @@
+import React from "react";
+import "../styles/Header.css"; // Import CSS
+
+const Header = () => {
+  return (
+    <header className="header">
+      <h1 className="header-title">Welcome to DermaSense AI</h1>
+      {/* <p className="header-subtitle">AI-Based Detection of Bacterial and Fungal Skin Diseases</p> */}
+    </header>
+  );
+};
+
+export default Header;

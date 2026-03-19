@@ -1,0 +1,102 @@
+.disease-detail-container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 40px;
+    background: var(--surface-color);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--border-radius-large);
+    box-shadow: var(--shadow-xl);
+}
+
+.disease-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.disease-title {
+    color: var(--white-color);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    margin-bottom: 15px;
+    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.disease-subtitle {
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    font-style: italic;
+}
+
+.disease-image-container {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.disease-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--border-radius-large);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.disease-section {
+    margin-bottom: 40px;
+}
+
+.disease-section h2 {
+    color: var(--white-color);
+    border-bottom: 2px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    font-size: 2rem;
+}
+
+.disease-section h3 {
+    color: var(--white-color);
+    margin-top: 25px;
+    font-size: 1.5rem;
+}
+
+.disease-section ul, .disease-section ol {
+    padding-left: 20px;
+    color: var(--text-muted);
+}
+
+.disease-section li {
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+.disease-section p {
+    line-height: 1.7;
+    margin-bottom: 20px;
+    color: var(--text-muted);
+}
+
+.back-button {
+    display: inline-block;
+    margin-top: 30px;
+    padding: 12px 24px;
+    background: rgba(255,255,255,0.1);
+    color: var(--white-color);
+    text-decoration: none;
+    border-radius: var(--border-radius-pill);
+    transition: var(--transition-default);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.back-button:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .disease-detail-container {
+        padding: 20px;
+        margin: 20px;
+    }
+}
