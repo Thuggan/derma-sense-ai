@@ -18,7 +18,7 @@ describe('Appointment Controller', function() {
     }
     
     // Connect to test DB
-    await mongoose.connect('mongodb://localhost:27017/skinproscan_test');
+    await mongoose.connect('mongodb://localhost:27017/dermasense_test');
 
     // Create test clinic
     const clinic = await Clinic.create({
@@ -33,7 +33,7 @@ describe('Appointment Controller', function() {
     // Create test user
     const user = await User.create({
       name: "Test User",
-      email: "test@skinproscan.com",
+      email: "test@dermasense.com",
       password: "hashedpassword"
     });
 

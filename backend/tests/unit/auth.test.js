@@ -14,7 +14,7 @@ describe('Auth Controller', () => {
     }
     
     // Connect to test database
-    await mongoose.connect('mongodb://localhost:27017/skinproscan_test', {
+    await mongoose.connect('mongodb://localhost:27017/dermasense_test', {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
@@ -32,7 +32,7 @@ describe('Auth Controller', () => {
       .post('/api/auth/register')
       .send({
         name: 'Test User',
-        email: 'test@skinproscan.com',
+        email: 'test@dermasense.com',
         password: 'Test123!'
       });
     

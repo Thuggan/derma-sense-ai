@@ -24,7 +24,7 @@ function SkinDiseaseClassifier() {
         console.log(`TensorFlow initialized with backend: ${tf.getBackend()}`);
         
         // Load the model from public folder
-        const model = await loadGraphModel('/skinproscan_224_tfjs_model/model.json');
+        const model = await loadGraphModel('/dermasense_224_tfjs_model/model.json');
         setModel(model);
         setError(null);
         console.log('Model loaded successfully');

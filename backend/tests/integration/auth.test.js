@@ -10,7 +10,7 @@ let User;
 describe('Auth Controller', function () {
   let mongoServer;
 
-  const testEmail = 'test-auth@skinproscan.com';
+  const testEmail = 'test-auth@dermasense.com';
   const testPassword = 'Test123!';
 
   before(async function () {

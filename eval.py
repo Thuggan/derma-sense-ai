@@ -3,7 +3,7 @@ import tensorflow as tf
 
 with open('model_info.txt', 'w') as f:
     try:
-        model = tf.keras.models.load_model('backend/model/skinproscan_model_224_finetuned.keras')
+        model = tf.keras.models.load_model('backend/model/dermasense_model_224_finetuned.keras')
         f.write('Model Loaded\n')
         for layer in model.layers:
             f.write(layer.name + '\n')

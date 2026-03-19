@@ -17,7 +17,7 @@ describe('Clinic Booking System', () => {
     // Get auth token
     const loginRes = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'test@skinproscan.com', password: 'Test123!' });
+      .send({ email: 'test@dermasense.com', password: 'Test123!' });
     authToken = loginRes.body.token;
   });
 

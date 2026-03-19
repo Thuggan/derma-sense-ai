@@ -1,4 +1,4 @@
-SkinProScan - A Web-Based AI Solution for Preliminary Detection and Awareness 
+DermaSense AI - A Web-Based AI Solution for Preliminary Detection and Awareness 
 of Bacterial & Fungal Skin Diseases
  
  GitHub link of the project - 
@@ -6,7 +6,7 @@ of Bacterial & Fungal Skin Diseases
  
  Project Summary:
 
-SkinProScan is a full-stack MERN web application designed to detect and raise 
+DermaSense AI is a full-stack MERN web application designed to detect and raise 
 awareness about bacterial and fungal skin diseases. The system integrates AI-powered 
 image classification, symptom assessment, appointment booking, and educational content.
 

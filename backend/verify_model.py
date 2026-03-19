@@ -9,7 +9,7 @@ app = Flask(__name__)
 CORS(app, resources={r"/predict": {"origins": "*"}})
 
 # Load the model
-model = tf.keras.models.load_model('model/skinproscan_model_224_finetuned.keras')
+model = tf.keras.models.load_model('model/dermasense_model_224_finetuned.keras')
 
 # Configure upload folder
 UPLOAD_FOLDER = 'uploads'

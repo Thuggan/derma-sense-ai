@@ -8,7 +8,7 @@ const Footer = () => {
       <div className="footer-container">
         {/* Left Side - Logo and Name */}
         <div className="footer-logo">
-          <img src="/SkinProScan_logo.png" alt="DermaSense AI Logo" />
+          <img src="/DermaSense_logo.png" alt="DermaSense AI Logo" />
           <h2>DermaSense AI</h2>
         </div>
 

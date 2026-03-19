@@ -1,7 +1,7 @@
 describe('QuickCheck Flow', () => {
     it('completes prediction flow', () => {
       cy.visit('/login');
-      cy.get('input[name="email"]').type('test@skinproscan.com');
+      cy.get('input[name="email"]').type('test@dermasense.com');
       cy.get('input[name="password"]').type('Test123!');
       cy.contains('Login').click();
   

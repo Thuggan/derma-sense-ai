@@ -19,7 +19,7 @@ describe('Prediction Controller', function() {
     if (mongoose.connection.readyState !== 0) {
       await mongoose.disconnect();
     }
-    await mongoose.connect('mongodb://localhost:27017/skinproscan_test');
+    await mongoose.connect('mongodb://localhost:27017/dermasense_test');
 
     // Create test image
     if (!fs.existsSync(testDir)) {
