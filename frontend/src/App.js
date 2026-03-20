@@ -30,6 +30,7 @@ import ScrollToTop from './components/ScrollToTop';
 import PrivateRoute from './components/PrivateRoute';
 import AppointmentHistory from './pages/AppointmentHistory';
 import ScrollRevealWrapper from './components/ScrollRevealWrapper';
+import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
   // TensorFlow.js memory management
@@ -108,6 +109,7 @@ function App() {
         <Route path="/disease/ringworm" element={<Ringworm />} />   
         <Route path="/skin-check" element={<PredictPage />} />   
         <Route path="/appointmenthistory" element={<PrivateRoute><AppointmentHistory /></PrivateRoute>} />
+        <Route path="/admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
       </Routes>
       <Footer />
      </div></Router>

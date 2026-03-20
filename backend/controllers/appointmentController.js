@@ -1,7 +1,9 @@
 const Appointment = require('../models/Appointment');
 const Clinic = require('../models/Clinic');
+const User = require('../models/User');
 const mongoose = require('mongoose');
 const { createNotification } = require('../services/notificationService');
+const sendEmail = require('../services/emailService');
 
 // Get user appointments
 const getUserAppointments = async (req, res) => {
@@ -135,6 +137,38 @@ const bookAppointment = async (req, res) => {
     });
 
     await appointment.save();
+
+    // Fetch user to get their email address
+    const user = await User.findById(patientId);
+
+    // Send a real automated confirmation email
+    if (user && user.email) {
+      const emailContent = `
+Dear ${user.name},
+
+Your appointment has been successfully booked with DermaSense AI!
+
+Appointment Details:
+--------------------------
+Doctor: ${doctorName}
+Clinic: ${clinic.name} (${clinic.address})
+Date: ${new Date(date).toDateString()}
+Time: ${time}
+Reference Code: ${appointment.reference}
+
+Please arrive 15 minutes before your scheduled timeframe.
+If you have any questions, you can reply directly to this email.
+
+Thank you,
+The DermaSense AI Team
+      `;
+
+      await sendEmail({
+        email: user.email,
+        subject: `Appointment Confirmed: ${doctorName} on ${new Date(date).toDateString()}`,
+        message: emailContent.trim()
+      });
+    }
 
     res.status(201).json({
       success: true,

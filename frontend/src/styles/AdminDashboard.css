@@ -1,0 +1,38 @@
+.admin-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.admin-container h1 {
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.admin-container p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.admin-container button:hover {
+    opacity: 0.9;
+}
+
+.admin-container form input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.admin-container table th {
+    background-color: #f8f9fa;
+    color: #333;
+    font-weight: 600;
+}
+
+.admin-container table td {
+    color: #555;
+}

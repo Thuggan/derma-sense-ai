@@ -6,6 +6,9 @@ const authRoutes = require('./routes/authRoutes');
 const clinicRoutes = require('./routes/clinicRoutes'); 
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const contactRoutes = require('./routes/contactRoutes');
+const faqRoutes = require('./routes/faqRoutes');
+
 
 const app = express();
 
@@ -32,6 +35,10 @@ app.use('/api/quickcheck', predictRoutes);
 app.use('/api/clinics', clinicRoutes); 
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/faqs', faqRoutes);
+
+
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'OK' }));

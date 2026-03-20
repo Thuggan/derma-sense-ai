@@ -30,6 +30,13 @@ const Navbar = () => {
             <div className="dropdown-menu">
               <NavLink to="/AppointmentHistory" className="dropdown-link" onClick={toggleDropdown}>Appointment History</NavLink>
               <NavLink to="/Notifications" className="dropdown-link" onClick={toggleDropdown}>Notifications</NavLink>
+              {(() => {
+                const userString = localStorage.getItem('user');
+                const user = userString ? JSON.parse(userString) : null;
+                return user && user.isAdmin ? (
+                  <NavLink to="/admin" className="dropdown-link" onClick={toggleDropdown}>Admin Panel</NavLink>
+                ) : null;
+              })()}
               <NavLink to="/UserProfile" className="dropdown-link" onClick={toggleDropdown}>Logout</NavLink>
             </div>
           )}

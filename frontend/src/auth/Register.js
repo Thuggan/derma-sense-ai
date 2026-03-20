@@ -16,7 +16,7 @@ const Register = () => {
             alert('Registration successful! Please log in.');
             navigate('/login'); // Redirect to login page after successful registration
         } catch (error) {
-            console.error(error.response.data);
+            console.error(error.response?.data || error.message);
             alert('Registration failed. Please try again.');
         }
     };

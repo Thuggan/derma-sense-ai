@@ -1,7 +1,8 @@
 const Clinic = require('../models/Clinic');
 const Appointment = require('../models/Appointment');
+const User = require('../models/User');
 const mongoose = require('mongoose');
-
+const sendEmail = require('../services/emailService');
 // Colombo clinics data
 const seedClinics = async () => {
   const count = await Clinic.countDocuments();
@@ -414,6 +415,38 @@ const bookAppointment = async (req, res) => {
 
     await appointment.save();
 
+    // Fetch user to get their email address
+    const user = await User.findById(patientId);
+
+    // Send a real automated confirmation email
+    if (user && user.email) {
+      const emailContent = `
+Dear ${user.name},
+
+Your appointment has been successfully booked with DermaSense AI!
+
+Appointment Details:
+--------------------------
+Doctor: ${doctorName}
+Clinic: ${clinic.name} (${clinic.address})
+Date: ${new Date(date).toDateString()}
+Time: ${time}
+Reference Code: ${appointment.reference}
+
+Please arrive 15 minutes before your scheduled timeframe.
+If you have any questions, you can reply directly to this email.
+
+Thank you,
+The DermaSense AI Team
+      `;
+
+      await sendEmail({
+        email: user.email,
+        subject: `Appointment Confirmed: ${doctorName} on ${new Date(date).toDateString()}`,
+        message: emailContent.trim()
+      });
+    }
+
     res.status(201).json({
       success: true,
       booking: {
@@ -432,11 +465,84 @@ const bookAppointment = async (req, res) => {
   }
 };
 
+// --- ADMIN CRUD OPERATIONS ---
+// Create a new clinic
+const createClinic = async (req, res) => {
+  try {
+    const { name, address, location, phone, email, website, services, openingHours, description, doctors } = req.body;
+    
+    // Basic validation
+    if (!name || !address || !location) {
+      return res.status(400).json({ success: false, error: 'Name, address, and location are required' });
+    }
+
+    const newClinic = new Clinic({
+      name, address, location, phone, email, website, services, openingHours, description,
+      doctors: doctors || [],
+      images: []
+    });
+
+    await newClinic.save();
+    res.status(201).json({ success: true, data: newClinic });
+  } catch (error) {
+    console.error("Create Clinic Error:", error);
+    res.status(500).json({ success: false, error: 'Failed to create clinic' });
+  }
+};
+
+// Update an existing clinic
+const updateClinic = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, error: 'Invalid clinic ID' });
+    }
+
+    const clinic = await Clinic.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+    
+    if (!clinic) {
+      return res.status(404).json({ success: false, error: 'Clinic not found' });
+    }
+
+    res.status(200).json({ success: true, data: clinic });
+  } catch (error) {
+    console.error("Update Clinic Error:", error);
+    res.status(500).json({ success: false, error: 'Failed to update clinic' });
+  }
+};
+
+// Delete a clinic
+const deleteClinic = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, error: 'Invalid clinic ID' });
+    }
+
+    const clinic = await Clinic.findByIdAndDelete(id);
+    
+    if (!clinic) {
+      return res.status(404).json({ success: false, error: 'Clinic not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'Clinic successfully deleted' });
+  } catch (error) {
+    console.error("Delete Clinic Error:", error);
+    res.status(500).json({ success: false, error: 'Failed to delete clinic' });
+  }
+};
+
 // Seed database on startup
 seedClinics();
 
 module.exports = {
   getClinics,
   getClinicDetails,
-  bookAppointment
+  bookAppointment,
+  createClinic,
+  updateClinic,
+  deleteClinic
 };

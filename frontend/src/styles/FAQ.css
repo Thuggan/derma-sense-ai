@@ -34,6 +34,22 @@
   flex: 1; 
 }
 
+.faq-text h3 {
+  color: #084974;
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.faq-text p {
+  color: #333333;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+
 .faq-icon img {
   width: 40px; 
   height: 40px;
