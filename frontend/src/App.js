@@ -13,6 +13,8 @@ import TermsOfService from "./pages/TermsOfService";
 import UserProfile from "./pages/UserProfile";
 import Login from "./auth/Login";
 import Register from "./auth/Register";
+import ForgotPassword from "./auth/ForgotPassword";
+import ResetPassword from "./auth/ResetPassword";
 import History from "./pages/History";
 import FAQ from "./pages/FAQ";
 import Notifications from "./pages/Notifications";
@@ -31,6 +33,7 @@ import PrivateRoute from './components/PrivateRoute';
 import AppointmentHistory from './pages/AppointmentHistory';
 import ScrollRevealWrapper from './components/ScrollRevealWrapper';
 import AdminDashboard from './pages/AdminDashboard';
+import DoctorDashboard from './pages/DoctorDashboard';
 
 function App() {
   // TensorFlow.js memory management
@@ -96,6 +99,8 @@ function App() {
         <Route path="/UserProfile" element={<UserProfile />} />
         <Route path="/Login" element={<Login />} />
         <Route path="/Register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:resettoken" element={<ResetPassword />} />
         <Route path="/History" element={<History />} />
         <Route path="/FAQ" element={<FAQ />} />
         <Route path="/Notifications" element={<Notifications />} />
@@ -110,6 +115,7 @@ function App() {
         <Route path="/skin-check" element={<PredictPage />} />   
         <Route path="/appointmenthistory" element={<PrivateRoute><AppointmentHistory /></PrivateRoute>} />
         <Route path="/admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
+        <Route path="/doctor" element={<PrivateRoute><DoctorDashboard /></PrivateRoute>} />
       </Routes>
       <Footer />
      </div></Router>

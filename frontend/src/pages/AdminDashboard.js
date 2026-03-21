@@ -4,19 +4,18 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/AdminDashboard.css';
 
 const AdminDashboard = () => {
+  const [activeTab, setActiveTab] = useState('clinics');
   const [clinics, setClinics] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
   // Form state
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    location: '',
-    phone: '',
-    email: '',
-    description: ''
+    name: '', address: '', location: '', phone: '', email: '', description: ''
   });
 
   const navigate = useNavigate();
@@ -34,21 +33,25 @@ const AdminDashboard = () => {
     }
   }, [navigate]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    fetchClinics();
-  }, []);
+    if (activeTab === 'clinics') fetchClinics();
+    if (activeTab === 'users') fetchUsers();
+    if (activeTab === 'appointments') fetchAppointments();
+    if (activeTab === 'contacts') fetchContacts();
+  }, [activeTab]);
 
+  const getHeaders = () => {
+    const token = localStorage.getItem('token');
+    return { headers: { Authorization: `Bearer ${token}` } };
+  };
+
+  // --- Fetches ---
   const fetchClinics = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      // Just passing Colombo to get clinics or fetching all...
-      // Since our clinicRoute requires location, we pass empty to get all if backend supports it, 
-      // or just pass 'Colombo' since that's what seedClinics populated.
-      const response = await axios.get('http://localhost:5000/api/clinics?location=Colombo', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setClinics(response.data.data);
+      const res = await axios.get('http://localhost:5000/api/clinics?location=Colombo', getHeaders());
+      setClinics(res.data.data || res.data);
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -57,17 +60,52 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('http://localhost:5000/api/auth/users', getHeaders());
+      setUsers(res.data.users || []);
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to fetch users');
+      setLoading(false);
+    }
   };
+
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('http://localhost:5000/api/appointments/all', getHeaders());
+      setAppointments(res.data.appointments || []);
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to fetch appointments');
+      setLoading(false);
+    }
+  };
+
+  const fetchContacts = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('http://localhost:5000/api/contact', getHeaders());
+      setContacts(res.data.data || []);
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to fetch contacts');
+      setLoading(false);
+    }
+  };
+
+  // --- Handlers ---
+  const handleInputChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleAddClinic = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/clinics', formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.post('http://localhost:5000/api/clinics', formData, getHeaders());
       alert('Clinic added successfully!');
       setShowForm(false);
       setFormData({ name: '', address: '', location: '', phone: '', email: '', description: '' });
@@ -81,74 +119,256 @@ const AdminDashboard = () => {
   const handleDeleteClinic = async (id) => {
     if (window.confirm('Are you sure you want to delete this clinic?')) {
       try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`http://localhost:5000/api/clinics/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.delete(`http://localhost:5000/api/clinics/${id}`, getHeaders());
         alert('Clinic deleted');
         fetchClinics();
       } catch (err) {
-        console.error(err);
         alert('Failed to delete clinic');
       }
     }
   };
 
-  if (loading) return <div>Loading Admin Dashboard...</div>;
-  if (error) return <div style={{color:'red'}}>{error}</div>;
+  const handleToggleAdminStatus = async (id, isAdmin) => {
+    try {
+      await axios.put(`http://localhost:5000/api/auth/users/${id}/admin`, { isAdmin }, getHeaders());
+      alert('User status updated');
+      fetchUsers();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update user status');
+    }
+  };
+
+  const handleAssignDoctor = async (id, clinicId) => {
+    try {
+      await axios.put(`http://localhost:5000/api/auth/users/${id}/admin`, { 
+        isDoctor: clinicId ? true : false,
+        clinicId: clinicId || null 
+      }, getHeaders());
+      alert('User doctor assignment updated');
+      fetchUsers();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to assign doctor');
+    }
+  };
+
+  const handleDeleteUser = async (id) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      try {
+        await axios.delete(`http://localhost:5000/api/auth/users/${id}`, getHeaders());
+        alert('User deleted');
+        fetchUsers();
+      } catch (err) {
+        alert(err.response?.data?.message || 'Failed to delete user');
+      }
+    }
+  };
+
+  const handleDeleteContact = async (id) => {
+    if (window.confirm('Are you sure you want to delete this contact message?')) {
+      try {
+        await axios.delete(`http://localhost:5000/api/contact/${id}`, getHeaders());
+        alert('Message deleted');
+        fetchContacts();
+      } catch (err) {
+        alert('Failed to delete message');
+      }
+    }
+  };
+
+  // --- Styles ---
+  const tabStyle = (isActive) => ({
+    padding: '10px 20px',
+    backgroundColor: isActive ? '#01d8d1' : '#f0f0f0',
+    color: isActive ? '#fff' : '#333',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    transition: '0.3s'
+  });
+
+  const btnStyle = { border: 'none', padding: '5px 10px', color: '#fff', cursor: 'pointer', borderRadius: '3px' };
+  const thStyle = { padding: '10px', border: '1px solid #ddd', backgroundColor: '#f4f4f4', color: '#333', textAlign: 'left' };
+  const tdStyle = { padding: '10px', border: '1px solid #ddd', color: '#555' };
 
   return (
-    <div className="admin-container" style={{ padding: '2rem', minHeight: '80vh' }}>
+    <div className="admin-container" style={{ padding: '2rem', minHeight: '80vh', color: '#333' }}>
       <h1>Admin Dashboard</h1>
-      <p>Manage clinics and platform settings.</p>
+      <p>Manage clinics, users, appointments, and contact messages.</p>
       
-      <button 
-        style={{ padding: '10px 20px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', marginBottom: '20px' }}
-        onClick={() => setShowForm(!showForm)}
-      >
-        {showForm ? 'Cancel' : '+ Add New Clinic'}
-      </button>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <button onClick={() => setActiveTab('clinics')} style={tabStyle(activeTab === 'clinics')}>Clinics</button>
+        <button onClick={() => setActiveTab('users')} style={tabStyle(activeTab === 'users')}>Users</button>
+        <button onClick={() => setActiveTab('appointments')} style={tabStyle(activeTab === 'appointments')}>Appointments</button>
+        <button onClick={() => setActiveTab('contacts')} style={tabStyle(activeTab === 'contacts')}>Contacts</button>
+      </div>
 
-      {showForm && (
-        <form onSubmit={handleAddClinic} style={{ display: 'flex', flexDirection: 'column', maxWidth: '400px', gap: '10px', marginBottom: '30px', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-          <h3>Add Clinic</h3>
-          <input type="text" name="name" placeholder="Clinic Name" value={formData.name} onChange={handleInputChange} required />
-          <input type="text" name="location" placeholder="Location e.g. Colombo (Required for search)" value={formData.location} onChange={handleInputChange} required />
-          <input type="text" name="address" placeholder="Full Address" value={formData.address} onChange={handleInputChange} required />
-          <input type="text" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} />
-          <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleInputChange} />
-          <button type="submit" style={{ padding: '10px', backgroundColor: '#28a745', color: '#fff', border: 'none', cursor: 'pointer' }}>Create Clinic</button>
-        </form>
+      {loading && <div>Loading...</div>}
+      {error && <div style={{color:'#ffcccc'}}>{error}</div>}
+
+      {/* CLINCIS TAB */}
+      {!loading && !error && activeTab === 'clinics' && (
+        <div>
+          <button 
+            style={{ padding: '10px 20px', backgroundColor: '#01d8d1', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold' }}
+            onClick={() => setShowForm(!showForm)}
+          >
+            {showForm ? 'Cancel' : '+ Add New Clinic'}
+          </button>
+
+          {showForm && (
+            <form onSubmit={handleAddClinic} style={{ display: 'flex', flexDirection: 'column', maxWidth: '400px', gap: '10px', marginBottom: '30px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', background: '#f9f9f9' }}>
+              <h3 style={{color:'#333'}}>Add Clinic</h3>
+              <input type="text" name="name" placeholder="Clinic Name" value={formData.name} onChange={handleInputChange} required style={{padding:'10px'}}/>
+              <input type="text" name="location" placeholder="Location e.g. Colombo" value={formData.location} onChange={handleInputChange} required style={{padding:'10px'}}/>
+              <input type="text" name="address" placeholder="Full Address" value={formData.address} onChange={handleInputChange} required style={{padding:'10px'}}/>
+              <input type="text" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} style={{padding:'10px'}}/>
+              <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleInputChange} style={{padding:'10px'}}/>
+              <button type="submit" style={{ padding: '10px', backgroundColor: '#28a745', color: '#fff', border: 'none', cursor: 'pointer' }}>Create Clinic</button>
+            </form>
+          )}
+
+          <h3>Existing Clinics</h3>
+          <div style={{overflowX: 'auto'}}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Name</th>
+                  <th style={thStyle}>Location</th>
+                  <th style={thStyle}>Address</th>
+                  <th style={thStyle}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clinics.map(clinic => (
+                  <tr key={clinic._id}>
+                    <td style={tdStyle}>{clinic.name}</td>
+                    <td style={tdStyle}>{clinic.location}</td>
+                    <td style={tdStyle}>{clinic.address}</td>
+                    <td style={tdStyle}>
+                      <button onClick={() => handleDeleteClinic(clinic._id)} style={{ ...btnStyle, backgroundColor: '#dc3545' }}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+                {clinics.length === 0 && <tr><td colSpan="4" style={{...tdStyle, textAlign: 'center'}}>No clinics found</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
-      <h3>Existing Clinics</h3>
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-        <thead>
-          <tr style={{ backgroundColor: '#f4f4f4', textAlign: 'left' }}>
-            <th style={{ padding: '10px', border: '1px solid #ddd' }}>Name</th>
-            <th style={{ padding: '10px', border: '1px solid #ddd' }}>Location</th>
-            <th style={{ padding: '10px', border: '1px solid #ddd' }}>Address</th>
-            <th style={{ padding: '10px', border: '1px solid #ddd' }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {clinics.map(clinic => (
-            <tr key={clinic._id}>
-              <td style={{ padding: '10px', border: '1px solid #ddd' }}>{clinic.name}</td>
-              <td style={{ padding: '10px', border: '1px solid #ddd' }}>{clinic.location}</td>
-              <td style={{ padding: '10px', border: '1px solid #ddd' }}>{clinic.address}</td>
-              <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                <button 
-                  onClick={() => handleDeleteClinic(clinic._id)}
-                  style={{ backgroundColor: '#dc3545', color: '#fff', border: 'none', padding: '5px 10px', cursor: 'pointer', borderRadius: '3px' }}
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* USERS TAB */}
+      {!loading && !error && activeTab === 'users' && (
+        <div>
+          <h3>Registered Users</h3>
+          <div style={{overflowX: 'auto'}}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Name</th>
+                  <th style={thStyle}>Email</th>
+                  <th style={thStyle}>Role</th>
+                  <th style={thStyle}>Assign Clinic (DoctorRole)</th>
+                  <th style={thStyle}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u._id}>
+                    <td style={tdStyle}>{u.name}</td>
+                    <td style={tdStyle}>{u.email}</td>
+                    <td style={tdStyle}>{u.isAdmin ? 'Admin' : (u.isDoctor ? 'Doctor' : 'User')}</td>
+                    <td style={tdStyle}>
+                      <select 
+                        defaultValue={u.clinicId || ""} 
+                        onChange={(e) => handleAssignDoctor(u._id, e.target.value)}
+                        style={{ padding: '5px', borderRadius: '3px', border: '1px solid #ddd' }}
+                      >
+                        <option value="">None (Standard User)</option>
+                        {clinics.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                      </select>
+                    </td>
+                    <td style={tdStyle}>
+                      <button onClick={() => handleToggleAdminStatus(u._id, !u.isAdmin)} style={{ ...btnStyle, backgroundColor: u.isAdmin ? '#ffc107' : '#28a745', marginRight: '5px' }}>
+                        {u.isAdmin ? 'Remove Admin' : 'Make Admin'}
+                      </button>
+                      <button onClick={() => handleDeleteUser(u._id)} style={{ ...btnStyle, backgroundColor: '#dc3545' }}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+                {users.length === 0 && <tr><td colSpan="5" style={{...tdStyle, textAlign: 'center'}}>No users found</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* APPOINTMENTS TAB */}
+      {!loading && !error && activeTab === 'appointments' && (
+        <div>
+          <h3>Global Appointments</h3>
+          <div style={{overflowX: 'auto'}}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Patient Name</th>
+                  <th style={thStyle}>Clinic</th>
+                  <th style={thStyle}>Doctor</th>
+                  <th style={thStyle}>Date & Time</th>
+                  <th style={thStyle}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.map(a => (
+                  <tr key={a._id}>
+                    <td style={tdStyle}>{a.patientId?.name || 'Unknown'}</td>
+                    <td style={tdStyle}>{a.clinicId?.name || 'Unknown Clinic'}</td>
+                    <td style={tdStyle}>{a.doctorName}</td>
+                    <td style={tdStyle}>{new Date(a.date).toLocaleDateString()} at {a.time}</td>
+                    <td style={tdStyle}>{a.status}</td>
+                  </tr>
+                ))}
+                {appointments.length === 0 && <tr><td colSpan="5" style={{...tdStyle, textAlign: 'center'}}>No appointments found</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* CONTACTS TAB */}
+      {!loading && !error && activeTab === 'contacts' && (
+        <div>
+          <h3>Contact Us Submissions</h3>
+          <div style={{overflowX: 'auto'}}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Date</th>
+                  <th style={thStyle}>Name</th>
+                  <th style={thStyle}>Email</th>
+                  <th style={thStyle}>Message</th>
+                  <th style={thStyle}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contacts.map(c => (
+                  <tr key={c._id}>
+                    <td style={tdStyle}>{new Date(c.createdAt).toLocaleDateString()}</td>
+                    <td style={tdStyle}>{c.name}</td>
+                    <td style={tdStyle}>{c.email}</td>
+                    <td style={tdStyle}>{c.message}</td>
+                    <td style={tdStyle}>
+                      <button onClick={() => handleDeleteContact(c._id)} style={{ ...btnStyle, backgroundColor: '#dc3545' }}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+                {contacts.length === 0 && <tr><td colSpan="5" style={{...tdStyle, textAlign: 'center'}}>No messages found</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

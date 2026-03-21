@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import '../styles/Auth.css';
 
 const Login = () => {
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -43,15 +45,27 @@ const Login = () => {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
                 />
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
-                />
+                <div className="password-input-wrapper">
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        required
+                    />
+                    <button 
+                        type="button" 
+                        className="password-toggle-icon"
+                        onClick={() => setShowPassword(!showPassword)}
+                    >
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                </div>
                 <button type="submit">Login</button>
             </form>
+            <div className="auth-link" style={{ marginTop: '15px' }}>
+                <Link to="/forgot-password">Forgot Password?</Link>
+            </div>
             <div className="auth-link">
                 Not registered yet? <Link to="/register">Signup now</Link>
             </div>

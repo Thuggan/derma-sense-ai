@@ -260,7 +260,7 @@
   border: 1px solid var(--surface-border);
   border-radius: var(--border-radius-small);
   background: #ffffff;
-  color: var(--white-color);
+  color: #333;
   font-family: var(--font-family);
   font-size: 1rem;
   transition: var(--transition-default);

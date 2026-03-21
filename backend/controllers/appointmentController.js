@@ -132,7 +132,7 @@ const bookAppointment = async (req, res) => {
       time,
       patientId,
       notes: notes || "Skin condition consultation",
-      status: "confirmed",
+      status: "pending", // Default to pending until doctor verification
       reference: `APP-${Date.now()}-${Math.floor(Math.random() * 1000)}`
     });
 
@@ -184,8 +184,119 @@ The DermaSense AI Team
   }
 };
 
+// Get all appointments (Admin)
+const getAllAppointments = async (req, res) => {
+  try {
+    const appointments = await Appointment.find()
+      .populate('clinicId', 'name address')
+      .populate('patientId', 'name email')
+      .sort({ date: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: appointments.length,
+      appointments
+    });
+  } catch (error) {
+    console.error("Error fetching all appointments:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Server error while fetching all appointments" 
+    });
+  }
+};
+
+// Get clinic specific appointments for Doctor role
+const getClinicAppointments = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    
+    if (!user || !user.isDoctor || !user.clinicId) {
+      return res.status(403).json({ success: false, error: "Access denied. You must be an assigned doctor." });
+    }
+    
+    const appointments = await Appointment.find({ clinicId: user.clinicId })
+      .populate('patientId', 'name email')
+      .sort({ date: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: appointments.length,
+      appointments
+    });
+  } catch (error) {
+    console.error("Error fetching clinic appointments:", error);
+    res.status(500).json({ success: false, error: "Server error while fetching clinic appointments" });
+  }
+};
+
+// Update an appointment status as Doctor
+const updateAppointmentStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const user = await User.findById(req.user.id);
+    
+    if (!user || (!user.isAdmin && !user.isDoctor)) {
+       return res.status(403).json({ success: false, error: "Access denied." });
+    }
+
+    const appointment = await Appointment.findById(req.params.id)
+      .populate('patientId')
+      .populate('clinicId');
+    
+    if (!appointment) {
+      return res.status(404).json({ success: false, error: "Appointment not found" });
+    }
+
+    if (!user.isAdmin && user.clinicId.toString() !== appointment.clinicId._id.toString()) {
+       return res.status(403).json({ success: false, error: "Access denied to data from another clinic" });
+    }
+
+    const oldStatus = appointment.status;
+    appointment.status = status;
+    await appointment.save();
+
+    // Trigger emails and notifications when status changes
+    if (oldStatus !== status && appointment.patientId) {
+       const patient = appointment.patientId;
+       
+       if (status === 'confirmed') {
+          // Send notification to patient
+          await createNotification(patient._id, 'appointment', 'Appointment Approved', `Your appointment with Dr. ${appointment.doctorName} for ${new Date(appointment.date).toDateString()} has been APPROVED!`);
+          
+          // Send email to patient
+          await sendEmail({
+             email: patient.email,
+             subject: `Appointment Approved: Dr. ${appointment.doctorName}`,
+             message: `Dear ${patient.name},\n\nGreat news! Your clinic has approved your appointment request for Dr. ${appointment.doctorName} on ${new Date(appointment.date).toDateString()} at ${appointment.time}.\n\nPlease arrive 15 minutes early.\n\nThank you,\nThe DermaSense AI Team`
+          });
+
+          // Send notification to doctor
+          await createNotification(user._id, 'appointment', 'Appointment Approved', `You successfully approved the appointment for ${patient.name}.`);
+       }
+
+       if (status === 'cancelled') {
+          await createNotification(patient._id, 'appointment', 'Appointment Cancelled', `Your appointment request with Dr. ${appointment.doctorName} for ${new Date(appointment.date).toDateString()} has been cancelled or denied by the clinic.`);
+          await sendEmail({
+            email: patient.email,
+            subject: `Appointment Update: Dr. ${appointment.doctorName}`,
+            message: `Dear ${patient.name},\n\nUnfortunately, your appointment request for Dr. ${appointment.doctorName} on ${new Date(appointment.date).toDateString()} has been cancelled by the clinic.\n\nPlease log in to book another timeslot.\n\nThank you,\nThe DermaSense AI Team`
+         });
+       }
+    }
+
+    res.status(200).json({ success: true, appointment });
+  } catch (error) {
+    console.error("Error updating appointment status:", error);
+    res.status(500).json({ success: false, error: "Server error updating appointment status" });
+  }
+};
+
 module.exports = {
   getUserAppointments,
   cancelAppointment,
-  bookAppointment
+  bookAppointment,
+  getAllAppointments,
+  getClinicAppointments,
+  updateAppointmentStatus
 };

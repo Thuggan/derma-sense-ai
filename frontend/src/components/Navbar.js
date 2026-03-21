@@ -33,9 +33,13 @@ const Navbar = () => {
               {(() => {
                 const userString = localStorage.getItem('user');
                 const user = userString ? JSON.parse(userString) : null;
-                return user && user.isAdmin ? (
-                  <NavLink to="/admin" className="dropdown-link" onClick={toggleDropdown}>Admin Panel</NavLink>
-                ) : null;
+                if (!user) return null;
+                return (
+                  <>
+                    {user.isAdmin && <NavLink to="/admin" className="dropdown-link" onClick={toggleDropdown}>Admin Panel</NavLink>}
+                    {user.isDoctor && <NavLink to="/doctor" className="dropdown-link" onClick={toggleDropdown}>Doctor Panel</NavLink>}
+                  </>
+                );
               })()}
               <NavLink to="/UserProfile" className="dropdown-link" onClick={toggleDropdown}>Logout</NavLink>
             </div>

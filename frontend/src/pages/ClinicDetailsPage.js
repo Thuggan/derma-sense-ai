@@ -140,14 +140,14 @@ const ClinicDetailsPage = () => {
               ? bookingData.conflictType === 'user'
                 ? "You already have this appointment"
                 : "Time Slot Unavailable"
-              : "Booking Confirmed!"}
+              : "Booking Request Sent!"}
           </h3>
           <p>
             {bookingData.conflict
               ? bookingData.conflictType === 'user'
-                ? "You've already booked this time slot:"
+                ? "You've already booked this time slot."
                 : "This time slot is already booked by another user."
-              : `Your appointment with Dr. ${bookingData.doctorName} has been scheduled.`}
+              : `Your request for Dr. ${bookingData.doctorName} is pending clinic approval.`}
           </p>
           <p>Date: {new Date(bookingData.date).toLocaleDateString()}</p>
           <p>Time: {bookingData.time}</p>
@@ -249,9 +249,13 @@ const ClinicDetailsPage = () => {
                   setSelectedDoctor(e.target.value);
                   setSelectedTime('');
                 }}
-                disabled={!selectedDate}
+                disabled={!selectedDate || getAvailableDoctors().length === 0}
               >
-                <option value="">Select doctor</option>
+                <option value="">
+                  {getAvailableDoctors().length === 0 
+                    ? "No doctors available on this day, please pick another Date" 
+                    : "Select doctor"}
+                </option>
                 {getAvailableDoctors().map(doctor => (
                   <option key={doctor.name} value={doctor.name}>
                     Dr. {doctor.name} - {doctor.specialization}
@@ -267,9 +271,13 @@ const ClinicDetailsPage = () => {
               <select
                 value={selectedTime}
                 onChange={(e) => setSelectedTime(e.target.value)}
-                disabled={!selectedDoctor}
+                disabled={!selectedDoctor || getAvailableTimes().length === 0}
               >
-                <option value="">Select time</option>
+                <option value="">
+                  {getAvailableTimes().length === 0 
+                    ? "No timeslots available" 
+                    : "Select time"}
+                </option>
                 {getAvailableTimes().map(time => (
                   <option key={time} value={time}>{time}</option>
                 ))}

@@ -3,6 +3,7 @@ const Appointment = require('../models/Appointment');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 const sendEmail = require('../services/emailService');
+const { createNotification } = require('../services/notificationService');
 // Colombo clinics data
 const seedClinics = async () => {
   const count = await Clinic.countDocuments();
@@ -409,7 +410,7 @@ const bookAppointment = async (req, res) => {
       time,
       patientId,
       notes: notes || "Skin condition consultation",
-      status: "confirmed",
+      status: "pending",
       reference: `APP-${Date.now()}-${Math.floor(Math.random() * 1000)}`
     });
 
@@ -423,7 +424,8 @@ const bookAppointment = async (req, res) => {
       const emailContent = `
 Dear ${user.name},
 
-Your appointment has been successfully booked with DermaSense AI!
+Your appointment request has been safely received by DermaSense AI!
+It is currently pending approval from the clinic.
 
 Appointment Details:
 --------------------------
@@ -432,9 +434,9 @@ Clinic: ${clinic.name} (${clinic.address})
 Date: ${new Date(date).toDateString()}
 Time: ${time}
 Reference Code: ${appointment.reference}
+Status: PENDING APPROVAL
 
-Please arrive 15 minutes before your scheduled timeframe.
-If you have any questions, you can reply directly to this email.
+You can check your Appointment History page on our platform to see when the doctor approves it and marks it as Confirmed!
 
 Thank you,
 The DermaSense AI Team
@@ -442,9 +444,28 @@ The DermaSense AI Team
 
       await sendEmail({
         email: user.email,
-        subject: `Appointment Confirmed: ${doctorName} on ${new Date(date).toDateString()}`,
+        subject: `Appointment Request Pending: Dr. ${doctorName}`,
         message: emailContent.trim()
       });
+
+      // Send patient notification
+      await createNotification(
+        patientId,
+        'appointment',
+        'Booking Request Sent',
+        `Your request for Dr. ${doctorName} on ${new Date(date).toDateString()} is pending clinic approval.`
+      );
+
+      // Notify doctors assigned to this clinic
+      const clinicDoctors = await User.find({ isDoctor: true, clinicId });
+      for (const doc of clinicDoctors) {
+        await createNotification(
+          doc._id,
+          'appointment',
+          'New Booking Request',
+          `New appointment request for Dr. ${doctorName} from ${user.name} on ${new Date(date).toDateString()}`
+        );
+      }
     }
 
     res.status(201).json({

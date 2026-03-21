@@ -20,6 +20,7 @@ const appointmentSchema = new mongoose.Schema({
   },
   patientId: {
     type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true
   },
   status: {

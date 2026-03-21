@@ -86,3 +86,38 @@
     color: var(--white-color);
     text-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
 }
+
+/* Password Input Styles */
+.password-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-input-wrapper input {
+    padding-right: 45px; /* Make room for the eye icon */
+}
+
+.auth-container .password-toggle-icon {
+    position: absolute;
+    right: 15px;
+    top: calc(50% - 5px); /* Adjusted for the input margin */
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    width: auto;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-container .password-toggle-icon:hover {
+    background: transparent;
+    box-shadow: none;
+    transform: translateY(-50%);
+    color: #fff;
+}

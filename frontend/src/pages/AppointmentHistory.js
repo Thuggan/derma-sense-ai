@@ -95,7 +95,7 @@ const AppointmentHistory = () => {
               </div>
               
               <div className="appointment-actions">
-                {appointment.status === 'confirmed' && (
+                {(appointment.status === 'confirmed' || appointment.status === 'pending') && (
                   <>
                     <button 
                       onClick={() => navigate(`/clinics/${appointment.clinicId?._id}`)}

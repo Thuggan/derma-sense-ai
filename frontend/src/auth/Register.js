@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import '../styles/Auth.css';
 
 const Register = () => {
     const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -39,13 +41,22 @@ const Register = () => {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
                 />
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
-                />
+                <div className="password-input-wrapper">
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        required
+                    />
+                    <button 
+                        type="button" 
+                        className="password-toggle-icon"
+                        onClick={() => setShowPassword(!showPassword)}
+                    >
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                </div>
                 <button type="submit">Register</button>
             </form>
             <div className="auth-link">

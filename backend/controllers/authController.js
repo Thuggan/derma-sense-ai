@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const crypto = require('crypto');
+const sendEmail = require('../services/emailService');
 const { createNotification } = require('../services/notificationService');
 
 // Registration function
@@ -107,8 +109,177 @@ const getUserProfile = async (req, res) => {
     }
 };
 
+// Get all users (Admin)
+const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find().select('-password').sort({ name: 1 });
+        res.status(200).json({ success: true, count: users.length, users });
+    } catch (error) {
+        console.error('Get all users error:', error);
+        res.status(500).json({ success: false, error: 'Server error fetching users' });
+    }
+};
+
+// Update user admin status (Admin)
+const updateUserAdminStatus = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        
+        let actingAdminName = 'an Admin';
+        if (req.user && req.user.id) {
+            const actingAdmin = await User.findById(req.user.id);
+            if (actingAdmin) actingAdminName = actingAdmin.name;
+        }
+
+        if (user._id.toString() === req.user.id && req.body.isAdmin === false) {
+            return res.status(400).json({ success: false, message: 'You cannot remove your own admin status' });
+        }
+
+        if (req.body.isAdmin === false && user.isAdmin === true) {
+            await createNotification(user._id, 'system', 'Admin Access Removed', `Your admin access was removed by ${actingAdminName}.`);
+        } else if (req.body.isAdmin === true && user.isAdmin === false) {
+            await createNotification(user._id, 'system', 'Admin Access Granted', `You have been granted admin access by ${actingAdminName}.`);
+        }
+
+        if (req.body.isAdmin !== undefined) user.isAdmin = req.body.isAdmin;
+        if (req.body.isDoctor !== undefined) user.isDoctor = req.body.isDoctor;
+        if (req.body.clinicId !== undefined) user.clinicId = req.body.clinicId;
+
+        await user.save();
+
+        res.status(200).json({ success: true, message: 'User status updated', user: { id: user._id, name: user.name, isAdmin: user.isAdmin, isDoctor: user.isDoctor, clinicId: user.clinicId } });
+    } catch (error) {
+        console.error('Update user status error:', error);
+        res.status(500).json({ success: false, error: 'Server error updating user status' });
+    }
+};
+
+// Delete user (Admin)
+const deleteUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        if (user._id.toString() === req.user.id) {
+            return res.status(400).json({ success: false, message: 'You cannot delete yourself' });
+        }
+
+        await User.deleteOne({ _id: req.params.id });
+        res.status(200).json({ success: true, message: 'User deleted' });
+    } catch (error) {
+        console.error('Delete user error:', error);
+        res.status(500).json({ success: false, error: 'Server error deleting user' });
+    }
+};
+
+// Update user profile
+const updateUserProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+
+        if (user) {
+            user.name = req.body.name || user.name;
+            user.email = req.body.email || user.email;
+
+            if (req.body.password) {
+                const salt = await bcrypt.genSalt(10);
+                user.password = await bcrypt.hash(req.body.password, salt);
+            }
+
+            const updatedUser = await user.save();
+
+            res.json({
+                id: updatedUser._id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                isAdmin: updatedUser.isAdmin,
+                token: jwt.sign({ id: updatedUser._id }, 'your_jwt_secret', { expiresIn: '24h' })
+            });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        console.error('Update profile error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Forgot Password
+const forgotPassword = async (req, res) => {
+    try {
+        const user = await User.findOne({ email: req.body.email });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User with this email does not exist' });
+        }
+
+        const resetToken = crypto.randomBytes(20).toString('hex');
+        user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+        await user.save();
+
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
+
+        try {
+            await sendEmail({
+                email: user.email,
+                subject: 'DermaSense AI - Password Reset Request',
+                message: `You requested a password reset. Please go to this link to reset your password: \n\n ${resetUrl}`
+            });
+            res.status(200).json({ success: true, message: 'Email sent' });
+        } catch (error) {
+            user.resetPasswordToken = undefined;
+            user.resetPasswordExpire = undefined;
+            await user.save();
+            return res.status(500).json({ message: 'Email could not be sent' });
+        }
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+// Reset Password
+const resetPassword = async (req, res) => {
+    try {
+        const resetPasswordToken = crypto.createHash('sha256').update(req.params.resettoken).digest('hex');
+
+        const user = await User.findOne({
+            resetPasswordToken,
+            resetPasswordExpire: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired token' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(req.body.password, salt);
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+        await user.save();
+
+        res.status(200).json({ success: true, message: 'Password correctly reset' });
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
-    getUserProfile 
+    getUserProfile,
+    updateUserProfile,
+    forgotPassword,
+    resetPassword,
+    getAllUsers,
+    updateUserAdminStatus,
+    deleteUser
 };
