@@ -11,7 +11,7 @@ const AdminDashboard = () => {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Form state
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -140,9 +140,9 @@ const AdminDashboard = () => {
 
   const handleAssignDoctor = async (id, clinicId) => {
     try {
-      await axios.put(`http://localhost:5000/api/auth/users/${id}/admin`, { 
+      await axios.put(`http://localhost:5000/api/auth/users/${id}/admin`, {
         isDoctor: clinicId ? true : false,
-        clinicId: clinicId || null 
+        clinicId: clinicId || null
       }, getHeaders());
       alert('User doctor assignment updated');
       fetchUsers();
@@ -195,7 +195,7 @@ const AdminDashboard = () => {
     <div className="admin-container" style={{ padding: '2rem', minHeight: '80vh', color: '#333' }}>
       <h1>Admin Dashboard</h1>
       <p>Manage clinics, users, appointments, and contact messages.</p>
-      
+
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <button onClick={() => setActiveTab('clinics')} style={tabStyle(activeTab === 'clinics')}>Clinics</button>
         <button onClick={() => setActiveTab('users')} style={tabStyle(activeTab === 'users')}>Users</button>
@@ -204,12 +204,12 @@ const AdminDashboard = () => {
       </div>
 
       {loading && <div>Loading...</div>}
-      {error && <div style={{color:'#ffcccc'}}>{error}</div>}
+      {error && <div style={{ color: '#ffcccc' }}>{error}</div>}
 
       {/* CLINCIS TAB */}
       {!loading && !error && activeTab === 'clinics' && (
         <div>
-          <button 
+          <button
             style={{ padding: '10px 20px', backgroundColor: '#01d8d1', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold' }}
             onClick={() => setShowForm(!showForm)}
           >
@@ -218,18 +218,18 @@ const AdminDashboard = () => {
 
           {showForm && (
             <form onSubmit={handleAddClinic} style={{ display: 'flex', flexDirection: 'column', maxWidth: '400px', gap: '10px', marginBottom: '30px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', background: '#f9f9f9' }}>
-              <h3 style={{color:'#333'}}>Add Clinic</h3>
-              <input type="text" name="name" placeholder="Clinic Name" value={formData.name} onChange={handleInputChange} required style={{padding:'10px'}}/>
-              <input type="text" name="location" placeholder="Location e.g. Colombo" value={formData.location} onChange={handleInputChange} required style={{padding:'10px'}}/>
-              <input type="text" name="address" placeholder="Full Address" value={formData.address} onChange={handleInputChange} required style={{padding:'10px'}}/>
-              <input type="text" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} style={{padding:'10px'}}/>
-              <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleInputChange} style={{padding:'10px'}}/>
+              <h3 style={{ color: '#333' }}>Add Clinic</h3>
+              <input type="text" name="name" placeholder="Clinic Name" value={formData.name} onChange={handleInputChange} required style={{ padding: '10px' }} />
+              <input type="text" name="location" placeholder="Location e.g. Colombo" value={formData.location} onChange={handleInputChange} required style={{ padding: '10px' }} />
+              <input type="text" name="address" placeholder="Full Address" value={formData.address} onChange={handleInputChange} required style={{ padding: '10px' }} />
+              <input type="text" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} style={{ padding: '10px' }} />
+              <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleInputChange} style={{ padding: '10px' }} />
               <button type="submit" style={{ padding: '10px', backgroundColor: '#28a745', color: '#fff', border: 'none', cursor: 'pointer' }}>Create Clinic</button>
             </form>
           )}
 
           <h3>Existing Clinics</h3>
-          <div style={{overflowX: 'auto'}}>
+          <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
               <thead>
                 <tr>
@@ -250,7 +250,7 @@ const AdminDashboard = () => {
                     </td>
                   </tr>
                 ))}
-                {clinics.length === 0 && <tr><td colSpan="4" style={{...tdStyle, textAlign: 'center'}}>No clinics found</td></tr>}
+                {clinics.length === 0 && <tr><td colSpan="4" style={{ ...tdStyle, textAlign: 'center' }}>No clinics found</td></tr>}
               </tbody>
             </table>
           </div>
@@ -261,7 +261,7 @@ const AdminDashboard = () => {
       {!loading && !error && activeTab === 'users' && (
         <div>
           <h3>Registered Users</h3>
-          <div style={{overflowX: 'auto'}}>
+          <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
               <thead>
                 <tr>
@@ -279,8 +279,8 @@ const AdminDashboard = () => {
                     <td style={tdStyle}>{u.email}</td>
                     <td style={tdStyle}>{u.isAdmin ? 'Admin' : (u.isDoctor ? 'Doctor' : 'User')}</td>
                     <td style={tdStyle}>
-                      <select 
-                        defaultValue={u.clinicId || ""} 
+                      <select
+                        defaultValue={u.clinicId || ""}
                         onChange={(e) => handleAssignDoctor(u._id, e.target.value)}
                         style={{ padding: '5px', borderRadius: '3px', border: '1px solid #ddd' }}
                       >
@@ -296,7 +296,7 @@ const AdminDashboard = () => {
                     </td>
                   </tr>
                 ))}
-                {users.length === 0 && <tr><td colSpan="5" style={{...tdStyle, textAlign: 'center'}}>No users found</td></tr>}
+                {users.length === 0 && <tr><td colSpan="5" style={{ ...tdStyle, textAlign: 'center' }}>No users found</td></tr>}
               </tbody>
             </table>
           </div>
@@ -307,7 +307,7 @@ const AdminDashboard = () => {
       {!loading && !error && activeTab === 'appointments' && (
         <div>
           <h3>Global Appointments</h3>
-          <div style={{overflowX: 'auto'}}>
+          <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
               <thead>
                 <tr>
@@ -328,7 +328,7 @@ const AdminDashboard = () => {
                     <td style={tdStyle}>{a.status}</td>
                   </tr>
                 ))}
-                {appointments.length === 0 && <tr><td colSpan="5" style={{...tdStyle, textAlign: 'center'}}>No appointments found</td></tr>}
+                {appointments.length === 0 && <tr><td colSpan="5" style={{ ...tdStyle, textAlign: 'center' }}>No appointments found</td></tr>}
               </tbody>
             </table>
           </div>
@@ -339,7 +339,7 @@ const AdminDashboard = () => {
       {!loading && !error && activeTab === 'contacts' && (
         <div>
           <h3>Contact Us Submissions</h3>
-          <div style={{overflowX: 'auto'}}>
+          <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
               <thead>
                 <tr>
@@ -362,7 +362,7 @@ const AdminDashboard = () => {
                     </td>
                   </tr>
                 ))}
-                {contacts.length === 0 && <tr><td colSpan="5" style={{...tdStyle, textAlign: 'center'}}>No messages found</td></tr>}
+                {contacts.length === 0 && <tr><td colSpan="5" style={{ ...tdStyle, textAlign: 'center' }}>No messages found</td></tr>}
               </tbody>
             </table>
           </div>
