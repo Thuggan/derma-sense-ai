@@ -36,6 +36,7 @@ describe('Auth Controller', function () {
       name: 'Test User',
       email: testEmail,
       password: hashedPassword,
+      isVerified: true,
     });
   });
 

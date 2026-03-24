@@ -26,7 +26,7 @@ const sendEmail = async (options) => {
   try {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
       console.log(`[Email Service Mock] Would have sent email to ${options.email} with subject: ${options.subject}`);
-      return; 
+      return;
     }
     const info = await transporter.sendMail(mailOptions);
     console.log(`Email sent: ${info.response}`);

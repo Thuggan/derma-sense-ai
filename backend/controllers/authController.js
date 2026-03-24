@@ -9,36 +9,81 @@ const { createNotification } = require('../services/notificationService');
 const registerUser = async (req, res) => {
     const { name, email, password } = req.body;
     
+    // Basic email formatting validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: 'Please provide a valid email address structure' });
+    }
+    
     try {
         // Check if user exists
         let user = await User.findOne({ email });
         if (user) {
-            return res.status(400).json({ message: 'User already exists' });
+            if (user.isVerified || user.isAdmin) {
+                return res.status(400).json({ message: 'User already exists and is verified. Please log in.' });
+            } else {
+                // User exists but is not verified, so let's send them a new OTP instead of blocking them!
+                const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                user.otp = newOtp;
+                user.otpExpire = new Date(Date.now() + 10 * 60 * 1000);
+                
+                // If they provided a new password, optionally update it
+                const salt = await bcrypt.genSalt(10);
+                user.password = await bcrypt.hash(password, salt);
+                user.name = name;
+                
+                await user.save();
+                
+                try {
+                    await sendEmail({
+                        email: user.email,
+                        subject: 'DermaSense AI - Verify Your Email',
+                        message: `You recently tried to register. Your new verification code is: ${newOtp}\n\nThis code will expire in 10 minutes.`
+                    });
+                } catch (error) {
+                    console.error('Email error:', error);
+                }
+
+                return res.status(201).json({
+                    message: 'Unverified account found! A fresh OTP has been sent to your email. Please verify.',
+                    requiresOtp: true,
+                    email: user.email
+                });
+            }
         }
 
         // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
+        
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
         user = new User({
             name,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            otp,
+            otpExpire,
+            isVerified: false
         });
 
         await user.save();
 
-        // Create token with longer expiry for testing
-        const token = jwt.sign({ id: user._id }, 'your_jwt_secret', { expiresIn: '24h' });
+        try {
+            await sendEmail({
+                email: user.email,
+                subject: 'DermaSense AI - Verify Your Email',
+                message: `Thank you for registering. Your verification code is: ${otp}\n\nThis code will expire in 10 minutes.`
+            });
+        } catch (error) {
+            console.error('Initial email error:', error);
+        }
 
         res.status(201).json({
-            token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                isAdmin: user.isAdmin || false
-            }
+            message: 'Registration successful! An OTP has been sent to your email. Please verify to continue.',
+            requiresOtp: true,
+            email: user.email
         });
 
     } catch (error) {
@@ -62,6 +107,11 @@ const loginUser = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
+        }
+
+        // Check if verified
+        if (user.isVerified === false && user.otp) {
+            return res.status(403).json({ message: 'Please verify your email address to login.', requiresOtp: true });
         }
 
         // Create token
@@ -272,6 +322,84 @@ const resetPassword = async (req, res) => {
     }
 };
 
+// Verify OTP
+const verifyOTP = async (req, res) => {
+    const { email, otp } = req.body;
+    try {
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        if (user.isVerified) {
+            return res.status(400).json({ message: 'User is already verified' });
+        }
+
+        if (user.otp !== otp) {
+            return res.status(400).json({ message: 'Invalid OTP' });
+        }
+
+        if (new Date() > user.otpExpire) {
+            return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
+        }
+
+        user.isVerified = true;
+        user.otp = undefined;
+        user.otpExpire = undefined;
+        await user.save();
+
+        // Create token
+        const token = jwt.sign({ id: user._id }, 'your_jwt_secret', { expiresIn: '24h' });
+
+        res.status(200).json({
+            message: 'Email successfully verified',
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                isAdmin: user.isAdmin || false
+            }
+        });
+    } catch (error) {
+        console.error('Verify OTP error:', error);
+        res.status(500).json({ error: 'Server error verifying OTP' });
+    }
+};
+
+// Resend OTP
+const resendOTP = async (req, res) => {
+    const { email } = req.body;
+    try {
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        if (user.isVerified) {
+            return res.status(400).json({ message: 'User is already verified' });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.otp = otp;
+        user.otpExpire = new Date(Date.now() + 10 * 60 * 1000);
+        await user.save();
+
+        try {
+            await sendEmail({
+                email: user.email,
+                subject: 'DermaSense AI - New Verification Code',
+                message: `Your new verification code is: ${otp}\n\nThis code will expire in 10 minutes.`
+            });
+            res.status(200).json({ 
+                message: 'A new OTP has been sent to your email.'
+            });
+        } catch (error) {
+            console.error('Resend OTP error:', error);
+            res.status(500).json({ error: 'Failed to send OTP email' });
+        }
+    } catch (error) {
+        console.error('Resend OTP error:', error);
+        res.status(500).json({ error: 'Server error resending OTP' });
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
@@ -281,5 +409,7 @@ module.exports = {
     resetPassword,
     getAllUsers,
     updateUserAdminStatus,
-    deleteUser
+    deleteUser,
+    verifyOTP,
+    resendOTP
 };

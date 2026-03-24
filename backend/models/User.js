@@ -7,6 +7,9 @@ const UserSchema = new mongoose.Schema({
     isAdmin: { type: Boolean, default: false },
     isDoctor: { type: Boolean, default: false },
     clinicId: { type: mongoose.Schema.Types.ObjectId, ref: 'Clinic' },
+    isVerified: { type: Boolean, default: false },
+    otp: String,
+    otpExpire: Date,
     resetPasswordToken: String,
     resetPasswordExpire: Date
 });

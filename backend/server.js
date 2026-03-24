@@ -8,6 +8,7 @@ const appointmentRoutes = require('./routes/appointmentRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const faqRoutes = require('./routes/faqRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 
 const app = express();
@@ -37,6 +38,7 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/faqs', faqRoutes);
+app.use('/api/chat', chatRoutes);
 
 
 

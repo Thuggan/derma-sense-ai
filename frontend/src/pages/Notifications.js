@@ -35,9 +35,9 @@ const Notifications = () => {
         const response = await getNotifications();
         
         if (isMounted) {
-          if (response && response.data) {
-            // Handle both response structures
-            const notificationsData = response.data.notifications || response.data;
+          if (response) {
+            // Handle multiple possible response structures
+            const notificationsData = response.notifications || response.data?.notifications || response.data || response;
             setNotifications(Array.isArray(notificationsData) ? notificationsData : []);
           } else {
             setNotifications([]);
@@ -46,7 +46,8 @@ const Notifications = () => {
       } catch (err) {
         console.error("Error fetching notifications:", err);
         if (isMounted) {
-          setError(err.response?.data?.error || err.message || 'Failed to fetch notifications');
+          const errorMessage = typeof err === 'string' ? err : (err.response?.data?.error || err.message || 'Failed to fetch notifications');
+          setError(errorMessage);
         }
       } finally {
         if (isMounted) {
@@ -72,7 +73,8 @@ const Notifications = () => {
       );
     } catch (err) {
       console.error("Error marking as read:", err);
-      setError(err.response?.data?.error || err.message || 'Failed to mark as read');
+      const errorMessage = typeof err === 'string' ? err : (err.response?.data?.error || err.message || 'Failed to mark as read');
+      setError(errorMessage);
     }
   };
 
@@ -84,7 +86,8 @@ const Notifications = () => {
       );
     } catch (err) {
       console.error("Error deleting notification:", err);
-      setError(err.response?.data?.error || err.message || 'Failed to delete notification');
+      const errorMessage = typeof err === 'string' ? err : (err.response?.data?.error || err.message || 'Failed to delete notification');
+      setError(errorMessage);
     }
   };
 

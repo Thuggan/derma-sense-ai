@@ -34,6 +34,7 @@ import AppointmentHistory from './pages/AppointmentHistory';
 import ScrollRevealWrapper from './components/ScrollRevealWrapper';
 import AdminDashboard from './pages/AdminDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
+import Chatbot from './components/Chatbot';
 
 function App() {
   // TensorFlow.js memory management
@@ -117,6 +118,7 @@ function App() {
         <Route path="/admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
         <Route path="/doctor" element={<PrivateRoute><DoctorDashboard /></PrivateRoute>} />
       </Routes>
+      <Chatbot />
       <Footer />
      </div></Router>
   );

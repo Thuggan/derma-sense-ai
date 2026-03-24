@@ -8,7 +8,9 @@ const {
     resetPassword,
     getAllUsers,
     updateUserAdminStatus,
-    deleteUser
+    deleteUser,
+    verifyOTP,
+    resendOTP
 } = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware'); // Import admin middleware
@@ -18,6 +20,8 @@ const router = express.Router();
 // Routes
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+router.post('/verify-otp', verifyOTP);
+router.post('/resend-otp', resendOTP);
 router.get('/user', authMiddleware, getUserProfile);
 
 // User Profile
