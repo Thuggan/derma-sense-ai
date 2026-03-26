@@ -166,16 +166,22 @@ const QuickCheck = () => {
       const symptomResults = calculateSymptomMatch();
       const modelPrediction = await predictImage();
       
+      const topSymptomMatch = symptomResults[0];
+      const conditionsMatch = modelPrediction.disease === topSymptomMatch.disease;
+      const shouldUseModelPrediction = conditionsMatch || (modelPrediction.confidence >= topSymptomMatch.percentage);
+      const finalDisease = shouldUseModelPrediction ? modelPrediction.disease : topSymptomMatch.disease;
+      
       setResults({
         modelPrediction,
         symptomResults,
-        finalDisease: modelPrediction.disease,
+        finalDisease: finalDisease,
         modelConfidence: modelPrediction.confidence,
         symptomMatchForModel: symptomResults.find(
           item => item.disease === modelPrediction.disease
         )?.percentage || 0,
-        shouldUseModelPrediction: true,
-        recommendations: getRecommendations(modelPrediction.disease)
+        shouldUseModelPrediction: shouldUseModelPrediction,
+        conditionsMatch: conditionsMatch,
+        recommendations: getRecommendations(finalDisease)
       });
     } catch (error) {
       setError(error.message);
@@ -357,9 +363,11 @@ const QuickCheck = () => {
             <div className={`result-card ${results.shouldUseModelPrediction ? 'model-based' : 'symptom-based'}`}>
               <h4>{results.finalDisease}</h4>
               <p>
-                {results.shouldUseModelPrediction
+                {results.conditionsMatch
                   ? "The AI model and your symptoms both strongly suggest this condition."
-                  : "Using symptom analysis as the primary indicator."}
+                  : results.shouldUseModelPrediction
+                  ? "Based on the AI model's high confidence, this condition is the most likely despite differing symptoms."
+                  : "Based on the strong symptom match, symptom analysis is used as the primary indicator."}
               </p>
             </div>
           </div>

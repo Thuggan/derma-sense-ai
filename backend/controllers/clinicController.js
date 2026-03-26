@@ -559,11 +559,51 @@ const deleteClinic = async (req, res) => {
 // Seed database on startup
 seedClinics();
 
+// Update doctor's availability
+const updateDoctorAvailability = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || (!user.isDoctor && !user.isAdmin)) {
+      return res.status(403).json({ success: false, error: "Access denied. Only doctors or admins can update availability." });
+    }
+    
+    // Admins need to send clinicId in body, Doctors use their own clinicId
+    const clinicId = user.isAdmin ? req.body.clinicId : user.clinicId;
+    if (!clinicId) {
+      return res.status(400).json({ success: false, error: "No clinic associated with this action." });
+    }
+
+    const { doctorName, availability } = req.body;
+    if (!doctorName || !availability) {
+      return res.status(400).json({ success: false, error: "Doctor name and availability are required." });
+    }
+
+    const clinic = await Clinic.findById(clinicId);
+    if (!clinic) {
+      return res.status(404).json({ success: false, error: "Clinic not found." });
+    }
+
+    const doctorIndex = clinic.doctors.findIndex(d => d.name === doctorName);
+    if (doctorIndex === -1) {
+      return res.status(404).json({ success: false, error: "Doctor not found in this clinic." });
+    }
+
+    clinic.doctors[doctorIndex].availability = availability;
+    await clinic.save();
+
+    res.status(200).json({ success: true, data: clinic });
+  } catch (error) {
+    console.error("Error updating availability:", error);
+    res.status(500).json({ success: false, error: "Server error while updating availability." });
+  }
+};
+
 module.exports = {
   getClinics,
   getClinicDetails,
   bookAppointment,
   createClinic,
   updateClinic,
-  deleteClinic
+  deleteClinic,
+  updateDoctorAvailability
 };

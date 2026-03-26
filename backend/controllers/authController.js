@@ -123,7 +123,9 @@ const loginUser = async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
-                isAdmin: user.isAdmin || false
+                isAdmin: user.isAdmin || false,
+                isDoctor: user.isDoctor || false,
+                clinicId: user.clinicId || null
             }
         });
 
@@ -356,7 +358,9 @@ const verifyOTP = async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
-                isAdmin: user.isAdmin || false
+                isAdmin: user.isAdmin || false,
+                isDoctor: user.isDoctor || false,
+                clinicId: user.clinicId || null
             }
         });
     } catch (error) {

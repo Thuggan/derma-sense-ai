@@ -8,6 +8,9 @@ const adminMiddleware = require('../middleware/adminMiddleware');
 router.get('/', authMiddleware, clinicController.getClinics);
 router.get('/:id', authMiddleware, clinicController.getClinicDetails);
 
+// Doctor/Admin route for updating availability
+router.put('/update-availability', authMiddleware, clinicController.updateDoctorAvailability);
+
 // Admin routes
 router.post('/', authMiddleware, adminMiddleware, clinicController.createClinic);
 router.put('/:id', authMiddleware, adminMiddleware, clinicController.updateClinic);
