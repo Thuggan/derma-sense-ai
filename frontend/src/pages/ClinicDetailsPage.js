@@ -68,6 +68,11 @@ const ClinicDetailsPage = () => {
     return availability?.slots || [];
   };
 
+  const formatDoctorName = (name) => {
+    if (!name) return '';
+    return name.trim().toLowerCase().startsWith('dr') ? name.trim() : `Dr. ${name.trim()}`;
+  };
+
   const handleBooking = async () => {
     try {
       if (!isAuthenticated) {
@@ -147,7 +152,7 @@ const ClinicDetailsPage = () => {
               ? bookingData.conflictType === 'user'
                 ? "You've already booked this time slot."
                 : "This time slot is already booked by another user."
-              : `Your request for Dr. ${bookingData.doctorName} is pending clinic approval.`}
+              : `Your request for ${formatDoctorName(bookingData.doctorName)} is pending clinic approval.`}
           </p>
           <p>Date: {new Date(bookingData.date).toLocaleDateString()}</p>
           <p>Time: {bookingData.time}</p>
@@ -258,7 +263,7 @@ const ClinicDetailsPage = () => {
                 </option>
                 {getAvailableDoctors().map(doctor => (
                   <option key={doctor.name} value={doctor.name}>
-                    Dr. {doctor.name} - {doctor.specialization}
+                    {formatDoctorName(doctor.name)} - {doctor.specialization}
                   </option>
                 ))}
               </select>
@@ -310,7 +315,7 @@ const ClinicDetailsPage = () => {
             {clinic.doctors.map((doctor) => (
               <div key={doctor.name} className="doctor-card">
                 <div className="doctor-info">
-                  <h3>Dr. {doctor.name}</h3>
+                  <h3>{formatDoctorName(doctor.name)}</h3>
                   <p><strong>Specialization:</strong> {doctor.specialization}</p>
                   <p><strong>Qualifications:</strong> {doctor.qualifications}</p>
                   <p><strong>Experience:</strong> {doctor.experience}</p>

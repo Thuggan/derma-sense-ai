@@ -1,3 +1,6 @@
+
+
+
 const Appointment = require('../models/Appointment');
 const Clinic = require('../models/Clinic');
 const User = require('../models/User');

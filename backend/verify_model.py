@@ -52,8 +52,8 @@ def predict():
             CLASS_NAMES = {
                 0: "Cellulitis",
                 1: "Impetigo",
-                2: "Ringworm",
-                3: "Athlete's Foot"
+                2: "Athlete Foot",
+                3: "Ringworm"
             }
             
             # Cleanup

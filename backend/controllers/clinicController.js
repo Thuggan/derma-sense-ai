@@ -378,11 +378,12 @@ const bookAppointment = async (req, res) => {
       });
     }
 
-    // Validate doctor exists in clinic
-    if (!clinic.doctors.some(doc => doc.name === doctorName)) {
+    // Validate doctor exists in clinic (Check real users, not dummy arrays!)
+    const realDoctorExists = await User.exists({ name: doctorName, isDoctor: true, clinicId: clinicId });
+    if (!realDoctorExists) {
       return res.status(400).json({ 
         success: false,
-        error: "Doctor not found at this clinic"
+        error: "Doctor not found or not assigned to this clinic. Please consult Admin."
       });
     }
 

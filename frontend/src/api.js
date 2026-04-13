@@ -43,6 +43,7 @@ API.interceptors.response.use(
       if (error.response.status === 401 && shouldRedirect) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        window.location.href = '/login';
       }
       
       return Promise.reject(error.response.data?.message || 

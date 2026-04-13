@@ -198,9 +198,45 @@ const updateUserAdminStatus = async (req, res) => {
 
         if (req.body.isAdmin !== undefined) user.isAdmin = req.body.isAdmin;
         if (req.body.isDoctor !== undefined) user.isDoctor = req.body.isDoctor;
+
+        // --- Active Clinic Sync Architecture ---
+        const oldClinicId = user.clinicId;
+        const newClinicId = req.body.clinicId;
+
         if (req.body.clinicId !== undefined) user.clinicId = req.body.clinicId;
 
         await user.save();
+
+        // Always sync if clinic assignments changed
+        const hasClinicChanged = (oldClinicId ? oldClinicId.toString() : null) !== (newClinicId ? newClinicId.toString() : null);
+
+        if (hasClinicChanged) {
+            const Clinic = require('../models/Clinic');
+            
+            // Remove from old clinic
+            if (oldClinicId) {
+                await Clinic.updateOne(
+                    { _id: oldClinicId },
+                    { $pull: { doctors: { name: user.name } } }
+                );
+            }
+            
+            // Add to new clinic
+            if (newClinicId && user.isDoctor) {
+                await Clinic.updateOne(
+                    { _id: newClinicId, 'doctors.name': { $ne: user.name } },
+                    { $push: { 
+                        doctors: { 
+                            name: user.name, 
+                            specialization: "Clinical Consultant",
+                            qualifications: "Registered User",
+                            experience: "Verified",
+                            availability: []
+                        } 
+                    }}
+                );
+            }
+        }
 
         res.status(200).json({ success: true, message: 'User status updated', user: { id: user._id, name: user.name, isAdmin: user.isAdmin, isDoctor: user.isDoctor, clinicId: user.clinicId } });
     } catch (error) {
