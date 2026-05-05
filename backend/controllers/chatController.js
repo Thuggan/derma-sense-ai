@@ -24,9 +24,9 @@ const chatWithPsychiatrist = async (req, res) => {
         // ------------------------------------
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        // Use gemini-1.5-flash due to extremely high demand/503 errors on the 2.x endpoints right now
+        // Use gemini-2.5-flash as 1.5 is deprecated/removed
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash",
+            model: "gemini-2.5-flash",
             systemInstruction: systemInstruction,
         });
 
