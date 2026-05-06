@@ -24,9 +24,9 @@ const chatWithPsychiatrist = async (req, res) => {
         // ------------------------------------
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        // Use gemini-2.0-flash as it is the current universally supported stable model
+        // Use gemini-flash-lite-latest as a fallback since the 2.0-flash model hit a quota limit
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.0-flash",
+            model: "gemini-flash-lite-latest",
             systemInstruction: systemInstruction,
         });
 
