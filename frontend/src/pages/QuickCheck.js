@@ -330,7 +330,6 @@ const QuickCheck = () => {
           
           <div className="results-comparison">
             <div className="model-results">
-              <h3>AI Model Analysis</h3>
               <div className="result-card">
                 <h4>{results.modelPrediction.disease}</h4>
                 <div className="confidence-meter">
@@ -344,7 +343,6 @@ const QuickCheck = () => {
             </div>
             
             <div className="symptom-results">
-              <h3>Symptom Checker</h3>
               <div className="result-card">
                 <h4>{results.symptomResults[0].disease}</h4>
                 <div className="confidence-meter">
