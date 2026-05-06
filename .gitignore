@@ -5,4 +5,5 @@ __pycache__/
 uploads/
 dataset-preprocessing/
 dataset-preprocessing-2/
-.keras/
+*.keras
+backend/model/*.keras

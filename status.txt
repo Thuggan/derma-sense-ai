@@ -1,0 +1,29 @@
+ M backend/controllers/authController.js
+ M backend/db.js
+ M backend/package-lock.json
+ M backend/verify_model.py
+ M frontend/src/components/PredictPage.js
+ M frontend/src/pages/QuickCheck.js
+?? backend/cleanup_dataset.py
+?? backend/count_diseases.py
+?? backend/disease_counts.txt
+?? backend/download_dataset.py
+?? backend/download_non_skin.py
+?? backend/eval_old_on_new.py
+?? backend/model/class_names.json
+?? backend/model/dermasense_extended_model.keras
+?? backend/pylint_output.txt
+?? backend/test_out.txt
+?? backend/test_out_clean.txt
+?? backend/tmp_eval_new_model.py
+?? backend/tmp_test_pred.py
+?? backend/tmp_test_pred2.py
+?? backend/train.py
+?? backend/train_log.txt
+?? backend/train_log_v2.txt
+?? backend/train_log_v3.txt
+?? backend/train_log_v4.txt
+?? backend/train_log_v5.txt
+?? backend/train_log_v6.txt
+?? git_stat.txt
+?? status.txt
