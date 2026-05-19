@@ -80,6 +80,7 @@ def predict():
             
             # We rely on the Z_Non_Skin_Images class to catch non-skin data instead of an arbitrary threshold
             disease_name = CLASS_NAMES.get(predicted_class, "Unknown")
+            is_non_skin = disease_name == "Z_Non_Skin_Images"
             if disease_name == "Z_Non_Skin_Images":
                 disease_name = "Non-Skin Image / Unknown Condition"
             
@@ -91,6 +92,7 @@ def predict():
                 'disease': disease_name,
                 'class': predicted_class,
                 'confidence': confidence,
+                'isNonSkin': is_non_skin,
                 'message': 'Success'
             })
         else:

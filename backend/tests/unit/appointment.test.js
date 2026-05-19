@@ -25,7 +25,7 @@ describe('Appointment Controller', function() {
       name: "Test Clinic",
       address: "123 Main St",
       phone: "0112345678",
-      location: "Colombo",
+      location: "Kerala",
       doctors: [{ name: "Dr. Test" }]
     });
     clinicId = clinic._id;

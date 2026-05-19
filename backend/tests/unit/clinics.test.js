@@ -11,12 +11,12 @@ describe('Clinic Controller', () => {
       name: "Test Clinic",
       address: "123 Main St",
       phone: "0112345678",
-      location: "Colombo",
+      location: "Kerala",
       doctors: [{ name: "Dr. Test" }]
     });
 
     const res = await request(app)
-      .get('/api/clinics?location=Colombo');
+      .get('/api/clinics?location=Kerala');
     
     expect(res.statusCode).toEqual(200);
     expect(res.body.data[0].name).toEqual("Test Clinic");

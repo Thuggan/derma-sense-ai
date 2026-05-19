@@ -4,6 +4,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import '../styles/ClinicDetailsPage.css';
 import { getClinicDetails, bookAppointment } from '../api';
+import { formatAppointmentDate, formatDateForApi } from '../utils/appointmentDate';
 
 const ClinicDetailsPage = () => {
   const { id } = useParams();
@@ -90,7 +91,7 @@ const ClinicDetailsPage = () => {
       const bookingResponse = await bookAppointment({
         clinicId: clinic._id,
         doctorName: selectedDoctor,
-        date: selectedDate.toISOString().split('T')[0],
+        date: formatDateForApi(selectedDate),
         time: selectedTime,
         notes: notes || "Skin condition consultation"
       });
@@ -109,7 +110,7 @@ const ClinicDetailsPage = () => {
         throw new Error(bookingResponse.error);
       }
 
-      setBookingData(bookingResponse);
+      setBookingData(bookingResponse.booking || bookingResponse.appointment || bookingResponse);
       setBookingSuccess(true);
       
       // Reset form
@@ -154,7 +155,7 @@ const ClinicDetailsPage = () => {
                 : "This time slot is already booked by another user."
               : `Your request for ${formatDoctorName(bookingData.doctorName)} is pending clinic approval.`}
           </p>
-          <p>Date: {new Date(bookingData.date).toLocaleDateString()}</p>
+          <p>Date: {formatAppointmentDate(bookingData.date)}</p>
           <p>Time: {bookingData.time}</p>
           <p>Reference: {bookingData.reference}</p>
           <button 

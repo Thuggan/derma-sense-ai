@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import '../styles/AdminDashboard.css';
+import { formatAppointmentDate } from '../utils/appointmentDate';
 
 const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -307,7 +308,7 @@ const DoctorDashboard = () => {
                         <tbody>
                             {appointments.map(a => (
                                 <tr key={a._id} style={{ background: a.status === 'pending' ? '#fff9e6' : '#fff' }}>
-                                    <td style={tdStyle}>{new Date(a.date).toLocaleDateString()} at {a.time}</td>
+                                    <td style={tdStyle}>{formatAppointmentDate(a.date)} at {a.time}</td>
                                     <td style={tdStyle}>
                                         {a.patientId?.name ? (
                                             <span 

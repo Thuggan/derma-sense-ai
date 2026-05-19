@@ -3,6 +3,36 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const History = require('../models/History');
 
+const DEFAULT_CHAT_MODELS = [
+    'gemini-2.5-flash-lite',
+    'gemini-flash-lite-latest',
+    'gemini-2.5-flash',
+];
+
+const getChatModels = () => {
+    if (!process.env.GEMINI_MODEL) {
+        return DEFAULT_CHAT_MODELS;
+    }
+
+    const configuredModels = process.env.GEMINI_MODEL
+        .split(',')
+        .map(model => model.trim())
+        .filter(Boolean);
+
+    return [...new Set([...configuredModels, ...DEFAULT_CHAT_MODELS])];
+};
+
+const getErrorStatus = (error) => {
+    const message = error?.message || '';
+
+    if (error?.status) return error.status;
+    if (message.includes('503')) return 503;
+    if (message.includes('429')) return 429;
+    if (message.includes('404')) return 404;
+
+    return null;
+};
+
 // Ensure they use a valid API key, or provide a mock response if none is found.
 const chatWithPsychiatrist = async (req, res) => {
     try {
@@ -24,11 +54,6 @@ const chatWithPsychiatrist = async (req, res) => {
         // ------------------------------------
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        // Use gemini-flash-lite-latest as a fallback since the 2.0-flash model hit a quota limit
-        const model = genAI.getGenerativeModel({
-            model: "gemini-flash-lite-latest",
-            systemInstruction: systemInstruction,
-        });
 
         // Gemini API strictly requires history to start with a 'user' role, and strictly alternate.
         // It cannot handle back-to-back AI messages which happen on frontend network errors.
@@ -52,16 +77,42 @@ const chatWithPsychiatrist = async (req, res) => {
             cleanHistory.shift();
         }
 
-        const chat = model.startChat({
-            history: cleanHistory,
-            generationConfig: {
-                maxOutputTokens: 500,
-                temperature: 0.7,
-            },
-        });
+        let responseText = '';
+        let lastError = null;
 
-        const result = await chat.sendMessage(message);
-        const responseText = result.response.text();
+        for (const modelName of getChatModels()) {
+            try {
+                const model = genAI.getGenerativeModel({
+                    model: modelName,
+                    systemInstruction: systemInstruction,
+                });
+
+                const chat = model.startChat({
+                    history: cleanHistory,
+                    generationConfig: {
+                        maxOutputTokens: 500,
+                        temperature: 0.7,
+                    },
+                });
+
+                const result = await chat.sendMessage(message);
+                responseText = result.response.text();
+                break;
+            } catch (error) {
+                lastError = error;
+                const status = getErrorStatus(error);
+
+                if (![404, 429, 503].includes(status)) {
+                    throw error;
+                }
+
+                console.warn(`Gemini model ${modelName} failed with status ${status}; trying fallback model.`);
+            }
+        }
+
+        if (!responseText) {
+            throw lastError || new Error('No Gemini model returned a response.');
+        }
 
         res.status(200).json({ response: responseText });
     } catch (error) {

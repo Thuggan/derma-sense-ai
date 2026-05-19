@@ -15,7 +15,7 @@ const AppointmentPage = () => {
         setLoading(true);
         setError(null);
         
-        const response = await getClinics('Colombo', 10);
+        const response = await getClinics();
         
         if (response.error) {
           throw new Error(response.error);
@@ -48,7 +48,7 @@ const AppointmentPage = () => {
 
   return (
     <div className="appointment-container">
-      <h2>Dermatology Centers in Colombo</h2>
+      <h2>Dermatology Centers</h2>
       
       {loading && <p className="loading-message">Loading clinics...</p>}
       {error && <p className="error-message">{error}</p>}

@@ -271,6 +271,16 @@
   margin-top: 3rem;
 }
 
+.confidence-warning {
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #f8d59a;
+  border-radius: var(--border-radius-medium);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
 .result-card {
   background: rgba(30, 41, 59, 0.6);
   backdrop-filter: blur(12px);
@@ -420,6 +430,10 @@
   margin-bottom: 30px;
 }
 
+.results-comparison.single-result {
+  max-width: 520px;
+}
+
 .model-results, .symptom-results {
   flex: 1;
 }
@@ -473,4 +487,4 @@
   .location-dropdown {
     max-width: 100%;
   }
-}
+}

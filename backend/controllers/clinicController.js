@@ -4,18 +4,19 @@ const User = require('../models/User');
 const mongoose = require('mongoose');
 const sendEmail = require('../services/emailService');
 const { createNotification } = require('../services/notificationService');
-// Colombo clinics data
+const { parseAppointmentDate, formatAppointmentDate } = require('../utils/appointmentDate');
+// Kerala clinics data
 const seedClinics = async () => {
   const count = await Clinic.countDocuments();
   if (count === 0) {
     await Clinic.insertMany([
       {
-        name: "Colombo Skin Clinic",
-        address: "123 Galle Road, Colombo 03",
-        location: "Colombo",
+        name: "Kerala Skin Clinic",
+        address: "123 Galle Road, Kerala 03",
+        location: "Kerala",
         phone: "+94 11 2345678",
-        email: "info@colomboskin.com",
-        website: "www.colomboskin.com",
+        email: "info@keralaskin.com",
+        website: "www.keralaskin.com",
         services: ["General Dermatology", "Skin Cancer Screening", "Cosmetic Procedures"],
         openingHours: "Weekdays: 8:00 AM - 6:00 PM, Saturday: 8:00 AM - 1:00 PM",
         description: "Premier dermatology center with state-of-the-art facilities",
@@ -45,8 +46,8 @@ const seedClinics = async () => {
       },
       {
         name: "Dermatology Specialists Center",
-        address: "45 Union Place, Colombo 02",
-        location: "Colombo",
+        address: "45 Union Place, Kerala 02",
+        location: "Kerala",
         phone: "+94 11 3456789",
         email: "contact@dermspecialists.lk",
         website: "www.dermspecialists.lk",
@@ -78,9 +79,9 @@ const seedClinics = async () => {
         ]
       },
       {
-        name: "Skin Health Colombo",
-        address: "78 Horton Place, Colombo 07",
-        location: "Colombo",
+        name: "Skin Health Kerala",
+        address: "78 Horton Place, Kerala 07",
+        location: "Kerala",
         phone: "+94 11 4567890",
         email: "info@skinhealth.lk",
         website: "www.skinhealth.lk",
@@ -103,8 +104,8 @@ const seedClinics = async () => {
       },
       {
         name: "The Skin Clinic",
-        address: "32 Ward Place, Colombo 07",
-        location: "Colombo",
+        address: "32 Ward Place, Kerala 07",
+        location: "Kerala",
         phone: "+94 11 5678901",
         email: "appointments@theskinclinic.lk",
         website: "www.theskinclinic.lk",
@@ -126,12 +127,12 @@ const seedClinics = async () => {
         ]
       },
       {
-        name: "Colombo Dermatology Center",
-        address: "120 Havelock Road, Colombo 05",
-        location: "Colombo",
+        name: "Kerala Dermatology Center",
+        address: "120 Havelock Road, Kerala 05",
+        location: "Kerala",
         phone: "+94 11 6789012",
-        email: "cdc@colomboderm.com",
-        website: "www.colomboderm.com",
+        email: "cdc@keraladerm.com",
+        website: "www.keraladerm.com",
         services: ["Cosmetic Dermatology", "Anti-Aging Treatments", "Botox"],
         openingHours: "Weekdays: 9:00 AM - 6:00 PM, Saturday: 9:00 AM - 2:00 PM",
         description: "Advanced cosmetic dermatology and aesthetic treatments",
@@ -151,8 +152,8 @@ const seedClinics = async () => {
       },
       {
         name: "National Skin Hospital",
-        address: "234 Baseline Road, Colombo 09",
-        location: "Colombo",
+        address: "234 Baseline Road, Kerala 09",
+        location: "Kerala",
         phone: "+94 11 7890123",
         email: "info@nationalskinhospital.lk",
         website: "www.nationalskinhospital.lk",
@@ -175,8 +176,8 @@ const seedClinics = async () => {
       },
       {
         name: "Skin & Laser Center",
-        address: "56 Duplication Road, Colombo 04",
-        location: "Colombo",
+        address: "56 Duplication Road, Kerala 04",
+        location: "Kerala",
         phone: "+94 11 8901234",
         email: "laser@skinlaser.lk",
         website: "www.skinlaser.lk",
@@ -199,8 +200,8 @@ const seedClinics = async () => {
       },
       {
         name: "Children's Skin Care",
-        address: "89 Gregory's Road, Colombo 07",
-        location: "Colombo",
+        address: "89 Gregory's Road, Kerala 07",
+        location: "Kerala",
         phone: "+94 11 9012345",
         email: "children@childskin.lk",
         website: "www.childskin.lk",
@@ -223,8 +224,8 @@ const seedClinics = async () => {
       },
       {
         name: "Ayurvedic Skin Solutions",
-        address: "102 Ayurveda Road, Colombo 10",
-        location: "Colombo",
+        address: "102 Ayurveda Road, Kerala 10",
+        location: "Kerala",
         phone: "+94 11 0123456",
         email: "ayurveda@skinsolutions.lk",
         website: "www.ayurvedicskinsolutions.lk",
@@ -247,8 +248,8 @@ const seedClinics = async () => {
       },
       {
         name: "Modern Dermatology",
-        address: "11 Independence Avenue, Colombo 07",
-        location: "Colombo",
+        address: "11 Independence Avenue, Kerala 07",
+        location: "Kerala",
         phone: "+94 11 1234567",
         email: "modern@modernderm.lk",
         website: "www.modernderm.lk",
@@ -270,33 +271,33 @@ const seedClinics = async () => {
         ]
       }
     ]);
-    console.log("Clinic database seeded with 10 Colombo dermatology centers");
+    console.log("Clinic database seeded with 10 Kerala dermatology centers");
   }
 };
 
-// Get clinics by location
+// Get clinics, optionally filtered by location or name
 const getClinics = async (req, res) => {
   try {
     const { location, radius } = req.query;
 
-    if (!location || typeof location !== 'string' || location.trim() === '') {
-      return res.status(400).json({ 
-        success: false,
-        error: "Location is required and must be a non-empty string." 
-      });
-    }
+    const trimmedLocation = typeof location === 'string' ? location.trim() : '';
+    const query = trimmedLocation
+      ? {
+          $or: [
+            { location: new RegExp(trimmedLocation, 'i') },
+            { name: new RegExp(trimmedLocation, 'i') }
+          ]
+        }
+      : {};
 
-    const clinics = await Clinic.find({
-      $or: [
-        { location: new RegExp(location.trim(), 'i') },
-        { name: new RegExp(location.trim(), 'i') }
-      ]
-    }).sort({ name: 1 });
+    const clinics = await Clinic.find(query).sort({ name: 1 });
 
     if (clinics.length === 0) {
       return res.status(404).json({ 
         success: false,
-        error: "No clinics found for the specified location." 
+        error: trimmedLocation
+          ? "No clinics found for the specified location."
+          : "No clinics found."
       });
     }
 
@@ -387,19 +388,30 @@ const bookAppointment = async (req, res) => {
       });
     }
 
-    // Check for existing appointment
-    const existingAppointment = await Appointment.findOne({
+    const appointmentDate = parseAppointmentDate(date);
+    if (!appointmentDate) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid appointment date"
+      });
+    }
+
+    const formattedAppointmentDate = formatAppointmentDate(appointmentDate);
+
+    // Keep one active appointment per patient per clinic day without blocking other patients.
+    const existingUserAppointment = await Appointment.findOne({
       clinicId,
-      doctorName,
-      date: new Date(date),
-      time,
+      date: appointmentDate,
+      patientId,
       status: { $in: ['confirmed', 'pending'] }
     });
 
-    if (existingAppointment) {
+    if (existingUserAppointment) {
       return res.status(409).json({
         success: false,
-        error: "Time slot already booked"
+        error: "You already have an appointment at this clinic on this date",
+        existingAppointment: existingUserAppointment,
+        conflictType: 'user'
       });
     }
 
@@ -407,7 +419,7 @@ const bookAppointment = async (req, res) => {
     const appointment = new Appointment({
       clinicId,
       doctorName,
-      date: new Date(date),
+      date: appointmentDate,
       time,
       patientId,
       notes: notes || "Skin condition consultation",
@@ -432,7 +444,7 @@ Appointment Details:
 --------------------------
 Doctor: ${doctorName}
 Clinic: ${clinic.name} (${clinic.address})
-Date: ${new Date(date).toDateString()}
+Date: ${formattedAppointmentDate}
 Time: ${time}
 Reference Code: ${appointment.reference}
 Status: PENDING APPROVAL
@@ -454,7 +466,7 @@ The DermaSense AI Team
         patientId,
         'appointment',
         'Booking Request Sent',
-        `Your request for Dr. ${doctorName} on ${new Date(date).toDateString()} is pending clinic approval.`
+        `Your request for Dr. ${doctorName} on ${formattedAppointmentDate} is pending clinic approval.`
       );
 
       // Notify doctors assigned to this clinic
@@ -464,7 +476,7 @@ The DermaSense AI Team
           doc._id,
           'appointment',
           'New Booking Request',
-          `New appointment request for Dr. ${doctorName} from ${user.name} on ${new Date(date).toDateString()}`
+          `New appointment request for Dr. ${doctorName} from ${user.name} on ${formattedAppointmentDate}`
         );
       }
     }
@@ -491,17 +503,17 @@ The DermaSense AI Team
 // Create a new clinic
 const createClinic = async (req, res) => {
   try {
-    const { name, address, location, phone, email, website, services, openingHours, description, doctors } = req.body;
+    const { name, address, location, phone, email, website, services, openingHours, description, doctors, images } = req.body;
     
     // Basic validation
-    if (!name || !address || !location) {
-      return res.status(400).json({ success: false, error: 'Name, address, and location are required' });
+    if (!name || !address || !location || !phone) {
+      return res.status(400).json({ success: false, error: 'Name, address, location, and phone are required' });
     }
 
     const newClinic = new Clinic({
       name, address, location, phone, email, website, services, openingHours, description,
       doctors: doctors || [],
-      images: []
+      images: images || []
     });
 
     await newClinic.save();
@@ -532,6 +544,19 @@ const updateClinic = async (req, res) => {
   } catch (error) {
     console.error("Update Clinic Error:", error);
     res.status(500).json({ success: false, error: 'Failed to update clinic' });
+  }
+};
+
+const uploadClinicImages = async (req, res) => {
+  try {
+    const files = req.files || [];
+    res.status(200).json({
+      success: true,
+      images: files.map(file => file.filename)
+    });
+  } catch (error) {
+    console.error("Upload Clinic Images Error:", error);
+    res.status(500).json({ success: false, error: 'Failed to upload clinic images' });
   }
 };
 
@@ -605,6 +630,8 @@ module.exports = {
   bookAppointment,
   createClinic,
   updateClinic,
+  uploadClinicImages,
   deleteClinic,
   updateDoctorAvailability
 };
+

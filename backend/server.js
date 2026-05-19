@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const connectDB = require('./db');
 const cors = require('cors');
 const predictRoutes = require('./routes/predictRoutes');
@@ -9,6 +11,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const faqRoutes = require('./routes/faqRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const historyRoutes = require('./routes/historyRoutes');
 
 
 const app = express();
@@ -39,6 +42,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/faqs', faqRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/history', historyRoutes);
 
 
 

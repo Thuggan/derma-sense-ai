@@ -7,6 +7,7 @@ const User = require('../models/User');
 const mongoose = require('mongoose');
 const { createNotification } = require('../services/notificationService');
 const sendEmail = require('../services/emailService');
+const { parseAppointmentDate, formatAppointmentDate } = require('../utils/appointmentDate');
 
 // Get user appointments
 const getUserAppointments = async (req, res) => {
@@ -90,12 +91,20 @@ const bookAppointment = async (req, res) => {
       });
     }
 
-    // Check if time slot is already booked by this user
+    const appointmentDate = parseAppointmentDate(date);
+    if (!appointmentDate) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid appointment date"
+      });
+    }
+
+    const formattedAppointmentDate = formatAppointmentDate(appointmentDate);
+
+    // Keep one active appointment per patient per clinic day without blocking other patients.
     const existingUserAppointment = await Appointment.findOne({
       clinicId,
-      doctorName,
-      date: new Date(date),
-      time,
+      date: appointmentDate,
       patientId,
       status: { $ne: 'cancelled' }
     });
@@ -103,27 +112,9 @@ const bookAppointment = async (req, res) => {
     if (existingUserAppointment) {
       return res.status(409).json({
         success: false,
-        error: "You already have an appointment for this time slot",
+        error: "You already have an appointment at this clinic on this date",
         existingAppointment: existingUserAppointment,
         conflictType: 'user'
-      });
-    }
-
-    // Check if time slot is booked by any user
-    const existingAppointment = await Appointment.findOne({
-      clinicId,
-      doctorName,
-      date: new Date(date),
-      time,
-      status: { $ne: 'cancelled' }
-    });
-
-    if (existingAppointment) {
-      return res.status(409).json({
-        success: false,
-        error: "Time slot already booked by another user",
-        existingAppointment,
-        conflictType: 'general'
       });
     }
 
@@ -131,7 +122,7 @@ const bookAppointment = async (req, res) => {
     const appointment = new Appointment({
       clinicId,
       doctorName,
-      date: new Date(date),
+      date: appointmentDate,
       time,
       patientId,
       notes: notes || "Skin condition consultation",
@@ -155,7 +146,7 @@ Appointment Details:
 --------------------------
 Doctor: ${doctorName}
 Clinic: ${clinic.name} (${clinic.address})
-Date: ${new Date(date).toDateString()}
+Date: ${formattedAppointmentDate}
 Time: ${time}
 Reference Code: ${appointment.reference}
 
@@ -168,7 +159,7 @@ The DermaSense AI Team
 
       await sendEmail({
         email: user.email,
-        subject: `Appointment Confirmed: ${doctorName} on ${new Date(date).toDateString()}`,
+        subject: `Appointment Confirmed: ${doctorName} on ${formattedAppointmentDate}`,
         message: emailContent.trim()
       });
     }
@@ -218,7 +209,10 @@ const getClinicAppointments = async (req, res) => {
       return res.status(403).json({ success: false, error: "Access denied. You must be an assigned doctor." });
     }
     
-    const appointments = await Appointment.find({ clinicId: user.clinicId })
+    const appointments = await Appointment.find({
+      clinicId: user.clinicId,
+      doctorName: user.name
+    })
       .populate('patientId', 'name email')
       .sort({ date: -1 });
 
@@ -265,13 +259,13 @@ const updateAppointmentStatus = async (req, res) => {
        
        if (status === 'confirmed') {
           // Send notification to patient
-          await createNotification(patient._id, 'appointment', 'Appointment Approved', `Your appointment with Dr. ${appointment.doctorName} for ${new Date(appointment.date).toDateString()} has been APPROVED!`);
+          await createNotification(patient._id, 'appointment', 'Appointment Approved', `Your appointment with Dr. ${appointment.doctorName} for ${formatAppointmentDate(appointment.date)} has been APPROVED!`);
           
           // Send email to patient
           await sendEmail({
              email: patient.email,
              subject: `Appointment Approved: Dr. ${appointment.doctorName}`,
-             message: `Dear ${patient.name},\n\nGreat news! Your clinic has approved your appointment request for Dr. ${appointment.doctorName} on ${new Date(appointment.date).toDateString()} at ${appointment.time}.\n\nPlease arrive 15 minutes early.\n\nThank you,\nThe DermaSense AI Team`
+             message: `Dear ${patient.name},\n\nGreat news! Your clinic has approved your appointment request for Dr. ${appointment.doctorName} on ${formatAppointmentDate(appointment.date)} at ${appointment.time}.\n\nPlease arrive 15 minutes early.\n\nThank you,\nThe DermaSense AI Team`
           });
 
           // Send notification to doctor
@@ -279,11 +273,11 @@ const updateAppointmentStatus = async (req, res) => {
        }
 
        if (status === 'cancelled') {
-          await createNotification(patient._id, 'appointment', 'Appointment Cancelled', `Your appointment request with Dr. ${appointment.doctorName} for ${new Date(appointment.date).toDateString()} has been cancelled or denied by the clinic.`);
+          await createNotification(patient._id, 'appointment', 'Appointment Cancelled', `Your appointment request with Dr. ${appointment.doctorName} for ${formatAppointmentDate(appointment.date)} has been cancelled or denied by the clinic.`);
           await sendEmail({
             email: patient.email,
             subject: `Appointment Update: Dr. ${appointment.doctorName}`,
-            message: `Dear ${patient.name},\n\nUnfortunately, your appointment request for Dr. ${appointment.doctorName} on ${new Date(appointment.date).toDateString()} has been cancelled by the clinic.\n\nPlease log in to book another timeslot.\n\nThank you,\nThe DermaSense AI Team`
+            message: `Dear ${patient.name},\n\nUnfortunately, your appointment request for Dr. ${appointment.doctorName} on ${formatAppointmentDate(appointment.date)} has been cancelled by the clinic.\n\nPlease log in to book another timeslot.\n\nThank you,\nThe DermaSense AI Team`
          });
        }
     }

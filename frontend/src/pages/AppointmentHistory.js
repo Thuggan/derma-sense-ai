@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAppointments, cancelAppointment } from '../api';
-import { format } from 'date-fns';
+import { formatAppointmentDateLong } from '../utils/appointmentDate';
 import '../styles/AppointmentHistory.css';
 
 const AppointmentHistory = () => {
@@ -88,7 +88,7 @@ const AppointmentHistory = () => {
               
               <div className="appointment-details">
                 <p><strong>Doctor:</strong> Dr. {appointment.doctorName}</p>
-                <p><strong>Date:</strong> {format(new Date(appointment.date), 'PPP')}</p>
+                <p><strong>Date:</strong> {formatAppointmentDateLong(appointment.date)}</p>
                 <p><strong>Time:</strong> {appointment.time}</p>
                 <p><strong>Reference:</strong> {appointment.reference}</p>
                 {appointment.notes && <p><strong>Notes:</strong> {appointment.notes}</p>}

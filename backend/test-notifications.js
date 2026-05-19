@@ -21,7 +21,7 @@ async function runTest() {
     let docId = docRes.data.user.id;
 
     fs.appendFileSync('test_log.txt', '[3/9] Updating Doctor Role...\n');
-    let clinic = await Clinic.findOne({ name: "Colombo Skin Clinic" });
+    let clinic = await Clinic.findOne({ name: "Kerala Skin Clinic" });
     if (!clinic) throw new Error("Seed clinic not found.");
     await User.updateOne({ _id: new mongoose.Types.ObjectId(docId) }, { $set: { isDoctor: true, clinicId: clinic._id } });
 
@@ -52,3 +52,4 @@ async function runTest() {
 }
 
 runTest();
+

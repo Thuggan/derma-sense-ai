@@ -28,6 +28,7 @@ const Navbar = () => {
           <button className="hamburger-btn" onClick={toggleDropdown}>☰</button>
           {isDropdownOpen && (
             <div className="dropdown-menu">
+              <NavLink to="/history" className="dropdown-link" onClick={toggleDropdown}>Diagnosis History</NavLink>
               <NavLink to="/AppointmentHistory" className="dropdown-link" onClick={toggleDropdown}>Appointment History</NavLink>
               <NavLink to="/Notifications" className="dropdown-link" onClick={toggleDropdown}>Notifications</NavLink>
               {(() => {

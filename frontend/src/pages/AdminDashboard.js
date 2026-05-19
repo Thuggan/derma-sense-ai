@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import '../styles/AdminDashboard.css';
+import { formatAppointmentDate } from '../utils/appointmentDate';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('clinics');
@@ -15,7 +16,24 @@ const AdminDashboard = () => {
   // Form state
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', address: '', location: '', phone: '', email: '', description: ''
+    name: '',
+    address: '',
+    location: '',
+    phone: '',
+    email: '',
+    website: '',
+    openingHours: '',
+    description: '',
+    servicesText: ''
+  });
+  const [imageFiles, setImageFiles] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [doctorDraft, setDoctorDraft] = useState({
+    name: '',
+    specialization: '',
+    qualifications: '',
+    experience: '',
+    availabilityText: ''
   });
 
   const navigate = useNavigate();
@@ -50,7 +68,7 @@ const AdminDashboard = () => {
   const fetchClinics = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:5000/api/clinics?location=Colombo', getHeaders());
+      const res = await axios.get('http://localhost:5000/api/clinics', getHeaders());
       setClinics(res.data.data || res.data);
       setLoading(false);
     } catch (err) {
@@ -102,13 +120,110 @@ const AdminDashboard = () => {
   // --- Handlers ---
   const handleInputChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
+  const resetClinicForm = () => {
+    setFormData({
+      name: '',
+      address: '',
+      location: '',
+      phone: '',
+      email: '',
+      website: '',
+      openingHours: '',
+      description: '',
+      servicesText: ''
+    });
+    setImageFiles([]);
+    setDoctors([]);
+    setDoctorDraft({
+      name: '',
+      specialization: '',
+      qualifications: '',
+      experience: '',
+      availabilityText: ''
+    });
+  };
+
+  const parseAvailability = (availabilityText) => (
+    availabilityText
+      .split('\n')
+      .map(line => {
+        const [day, slotsText] = line.split(':');
+        if (!day || !slotsText) return null;
+        return {
+          day: day.trim(),
+          slots: slotsText.split(',').map(slot => slot.trim()).filter(Boolean)
+        };
+      })
+      .filter(Boolean)
+  );
+
+  const handleDoctorDraftChange = (e) => {
+    setDoctorDraft({ ...doctorDraft, [e.target.name]: e.target.value });
+  };
+
+  const handleAddDoctorToForm = () => {
+    if (!doctorDraft.name.trim()) {
+      alert('Doctor name is required before adding a doctor');
+      return;
+    }
+
+    setDoctors([
+      ...doctors,
+      {
+        name: doctorDraft.name.trim(),
+        specialization: doctorDraft.specialization.trim(),
+        qualifications: doctorDraft.qualifications.trim(),
+        experience: doctorDraft.experience.trim(),
+        availability: parseAvailability(doctorDraft.availabilityText)
+      }
+    ]);
+    setDoctorDraft({
+      name: '',
+      specialization: '',
+      qualifications: '',
+      experience: '',
+      availabilityText: ''
+    });
+  };
+
+  const uploadClinicImages = async () => {
+    if (imageFiles.length === 0) return [];
+
+    const uploadData = new FormData();
+    imageFiles.forEach(file => uploadData.append('images', file));
+    const token = localStorage.getItem('token');
+    const res = await axios.post('http://localhost:5000/api/clinics/upload-images', uploadData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    return res.data.images || [];
+  };
+
   const handleAddClinic = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/clinics', formData, getHeaders());
+      const images = await uploadClinicImages();
+      const clinicPayload = {
+        name: formData.name,
+        address: formData.address,
+        location: formData.location,
+        phone: formData.phone,
+        email: formData.email,
+        website: formData.website,
+        openingHours: formData.openingHours,
+        description: formData.description,
+        services: formData.servicesText.split('\n').map(service => service.trim()).filter(Boolean),
+        doctors,
+        images
+      };
+
+      await axios.post('http://localhost:5000/api/clinics', clinicPayload, getHeaders());
       alert('Clinic added successfully!');
       setShowForm(false);
-      setFormData({ name: '', address: '', location: '', phone: '', email: '', description: '' });
+      resetClinicForm();
       fetchClinics();
     } catch (err) {
       console.error(err);
@@ -217,13 +332,63 @@ const AdminDashboard = () => {
           </button>
 
           {showForm && (
-            <form onSubmit={handleAddClinic} style={{ display: 'flex', flexDirection: 'column', maxWidth: '400px', gap: '10px', marginBottom: '30px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', background: '#f9f9f9' }}>
+            <form onSubmit={handleAddClinic} style={{ display: 'flex', flexDirection: 'column', maxWidth: '720px', gap: '12px', marginBottom: '30px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', background: '#f9f9f9' }}>
               <h3 style={{ color: '#333' }}>Add Clinic</h3>
               <input type="text" name="name" placeholder="Clinic Name" value={formData.name} onChange={handleInputChange} required style={{ padding: '10px' }} />
-              <input type="text" name="location" placeholder="Location e.g. Colombo" value={formData.location} onChange={handleInputChange} required style={{ padding: '10px' }} />
+              <input type="text" name="location" placeholder="Location e.g. Kerala" value={formData.location} onChange={handleInputChange} required style={{ padding: '10px' }} />
               <input type="text" name="address" placeholder="Full Address" value={formData.address} onChange={handleInputChange} required style={{ padding: '10px' }} />
-              <input type="text" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} style={{ padding: '10px' }} />
+              <input type="text" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} required style={{ padding: '10px' }} />
               <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleInputChange} style={{ padding: '10px' }} />
+              <input type="text" name="website" placeholder="Website e.g. www.clinic.com" value={formData.website} onChange={handleInputChange} style={{ padding: '10px' }} />
+              <input type="text" name="openingHours" placeholder="Opening Hours e.g. Daily: 7:00 AM - 7:00 PM" value={formData.openingHours} onChange={handleInputChange} style={{ padding: '10px' }} />
+              <textarea name="description" placeholder="About the clinic" value={formData.description} onChange={handleInputChange} rows="3" style={{ padding: '10px', resize: 'vertical' }} />
+              <textarea name="servicesText" placeholder={'Services offered, one per line\nGeneral Dermatology\nPsoriasis Care'} value={formData.servicesText} onChange={handleInputChange} rows="4" style={{ padding: '10px', resize: 'vertical' }} />
+
+              <div style={{ padding: '12px', border: '1px solid #ddd', borderRadius: '6px', background: '#fff' }}>
+                <h4 style={{ marginTop: 0, color: '#333' }}>Clinic Photos</h4>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
+                />
+                {imageFiles.length > 0 && (
+                  <p style={{ marginBottom: 0, color: '#666' }}>{imageFiles.length} image(s) selected</p>
+                )}
+              </div>
+
+              <div style={{ padding: '12px', border: '1px solid #ddd', borderRadius: '6px', background: '#fff' }}>
+                <h4 style={{ marginTop: 0, color: '#333' }}>Doctors</h4>
+                <input type="text" name="name" placeholder="Doctor Name" value={doctorDraft.name} onChange={handleDoctorDraftChange} style={{ padding: '10px', width: '100%', marginBottom: '8px', boxSizing: 'border-box' }} />
+                <input type="text" name="specialization" placeholder="Specialization" value={doctorDraft.specialization} onChange={handleDoctorDraftChange} style={{ padding: '10px', width: '100%', marginBottom: '8px', boxSizing: 'border-box' }} />
+                <input type="text" name="qualifications" placeholder="Qualifications" value={doctorDraft.qualifications} onChange={handleDoctorDraftChange} style={{ padding: '10px', width: '100%', marginBottom: '8px', boxSizing: 'border-box' }} />
+                <input type="text" name="experience" placeholder="Experience e.g. 10 years" value={doctorDraft.experience} onChange={handleDoctorDraftChange} style={{ padding: '10px', width: '100%', marginBottom: '8px', boxSizing: 'border-box' }} />
+                <textarea
+                  name="availabilityText"
+                  placeholder={'Availability, one day per line\nMonday: 09:00-11:00, 14:00-16:00\nWednesday: 10:00-12:00'}
+                  value={doctorDraft.availabilityText}
+                  onChange={handleDoctorDraftChange}
+                  rows="3"
+                  style={{ padding: '10px', width: '100%', marginBottom: '8px', boxSizing: 'border-box', resize: 'vertical' }}
+                />
+                <button type="button" onClick={handleAddDoctorToForm} style={{ ...btnStyle, backgroundColor: '#17a2b8', padding: '8px 14px' }}>Add Doctor</button>
+                {doctors.length > 0 && (
+                  <ul style={{ color: '#333', paddingLeft: '20px' }}>
+                    {doctors.map((doctor, index) => (
+                      <li key={`${doctor.name}-${index}`} style={{ marginTop: '8px' }}>
+                        {doctor.name} - {doctor.specialization || 'No specialization'}
+                        <button
+                          type="button"
+                          onClick={() => setDoctors(doctors.filter((_, i) => i !== index))}
+                          style={{ ...btnStyle, backgroundColor: '#dc3545', marginLeft: '10px' }}
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <button type="submit" style={{ padding: '10px', backgroundColor: '#28a745', color: '#fff', border: 'none', cursor: 'pointer' }}>Create Clinic</button>
             </form>
           )}
@@ -324,7 +489,7 @@ const AdminDashboard = () => {
                     <td style={tdStyle}>{a.patientId?.name || 'Unknown'}</td>
                     <td style={tdStyle}>{a.clinicId?.name || 'Unknown Clinic'}</td>
                     <td style={tdStyle}>{a.doctorName}</td>
-                    <td style={tdStyle}>{new Date(a.date).toLocaleDateString()} at {a.time}</td>
+                    <td style={tdStyle}>{formatAppointmentDate(a.date)} at {a.time}</td>
                     <td style={tdStyle}>{a.status}</td>
                   </tr>
                 ))}
@@ -374,3 +539,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+

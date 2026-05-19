@@ -92,6 +92,7 @@ export const analyzeSkinCondition = async (imageFile, symptoms) => {
 
 // History Endpoints
 export const getHistory = (limit = 10) => API.get(`/history?limit=${limit}`);
+export const saveHistory = (historyData) => API.post('/history', historyData);
 export const getHistoryEntry = (id) => API.get(`/history/${id}`);
 export const deleteHistoryEntry = (id) => API.delete(`/history/${id}`);
 
@@ -112,7 +113,11 @@ export const submitSymptoms = (data) =>
 // Clinic Endpoints
 export const getClinics = async (location, radius = 10) => {
   try {
-    const response = await API.get(`/clinics?location=${encodeURIComponent(location)}&radius=${radius}`);
+    const params = new URLSearchParams();
+    if (location) params.set('location', location);
+    if (radius) params.set('radius', radius);
+
+    const response = await API.get(`/clinics${params.toString() ? `?${params.toString()}` : ''}`);
     return {
       data: Array.isArray(response.data) ? response.data : response.data.data,
       status: response.status

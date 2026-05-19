@@ -102,7 +102,8 @@ function App() {
         <Route path="/Register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:resettoken" element={<ResetPassword />} />
-        <Route path="/History" element={<History />} />
+        <Route path="/history" element={<PrivateRoute><History /></PrivateRoute>} />
+        <Route path="/History" element={<PrivateRoute><History /></PrivateRoute>} />
         <Route path="/FAQ" element={<FAQ />} />
         <Route path="/Notifications" element={<Notifications />} />
         <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />

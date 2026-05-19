@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import "../styles/QuickCheck.css";
 import uploadIcon from "../assets/upload-icon.png";
+import { saveHistory } from "../api";
 
 const DISEASE_SYMPTOMS = {
   'Cellulitis': {
@@ -48,6 +49,10 @@ const DISEASE_SYMPTOMS = {
     location: 1       
   }
 };
+
+const SYMPTOM_SUPPORTED_DISEASES = Object.keys(DISEASE_SYMPTOMS);
+const MIN_SKIN_IMAGE_CONFIDENCE = 30;
+const LOW_CONFIDENCE_WARNING_THRESHOLD = 50;
 
 const QuickCheck = () => {
   const navigate = useNavigate();
@@ -138,6 +143,7 @@ const QuickCheck = () => {
       return {
         disease: response.data.disease,
         confidence: Math.round(response.data.confidence * 100),
+        isNonSkin: response.data.isNonSkin || /non[-\s]?skin|unknown condition/i.test(response.data.disease || ''),
         allPredictions: [
           { 
             disease: response.data.disease, 
@@ -165,13 +171,23 @@ const QuickCheck = () => {
     try {
       const symptomResults = calculateSymptomMatch();
       const modelPrediction = await predictImage();
+
+      if (modelPrediction.isNonSkin) {
+        throw new Error('This does not look like a skin image. Please upload a clear photo of the affected skin area.');
+      }
+
+      if (modelPrediction.confidence < MIN_SKIN_IMAGE_CONFIDENCE) {
+        throw new Error(
+          `The uploaded image could not be confidently recognized as a skin condition (${modelPrediction.confidence}% confidence). Please upload a clear, close-up photo of the affected skin area.`
+        );
+      }
       
       const topSymptomMatch = symptomResults[0];
       const conditionsMatch = modelPrediction.disease === topSymptomMatch.disease;
-      const shouldUseModelPrediction = conditionsMatch || (modelPrediction.confidence >= topSymptomMatch.percentage);
+      const supportsSymptomMatching = SYMPTOM_SUPPORTED_DISEASES.includes(modelPrediction.disease);
+      const shouldUseModelPrediction = !supportsSymptomMatching || conditionsMatch || (modelPrediction.confidence >= topSymptomMatch.percentage);
       const finalDisease = shouldUseModelPrediction ? modelPrediction.disease : topSymptomMatch.disease;
-      
-      setResults({
+      const finalResults = {
         modelPrediction,
         symptomResults,
         finalDisease: finalDisease,
@@ -181,7 +197,27 @@ const QuickCheck = () => {
         )?.percentage || 0,
         shouldUseModelPrediction: shouldUseModelPrediction,
         conditionsMatch: conditionsMatch,
+        supportsSymptomMatching,
+        lowImageConfidence: modelPrediction.confidence < LOW_CONFIDENCE_WARNING_THRESHOLD,
         recommendations: getRecommendations(finalDisease)
+      };
+
+      setResults(finalResults);
+
+      await saveHistory({
+        imageInfo: {
+          name: imageFile.name,
+          size: imageFile.size
+        },
+        diagnosis: {
+          condition: finalDisease,
+          confidence: shouldUseModelPrediction ? modelPrediction.confidence : topSymptomMatch.percentage,
+          symptomConfidence: topSymptomMatch.percentage
+        },
+        symptoms,
+        modelPrediction,
+        symptomResults,
+        recommendations: finalResults.recommendations
       });
     } catch (error) {
       setError(error.message);
@@ -327,8 +363,13 @@ const QuickCheck = () => {
       ) : (
         <div className="results-section">
           <h2>Analysis Results</h2>
+          {results.lowImageConfidence && (
+            <div className="confidence-warning">
+              The uploaded image appears to be skin, but the AI image confidence is low. The final assessment uses your symptom answers more heavily, so please treat this as a rough screening result and consider retaking a clearer close-up photo.
+            </div>
+          )}
           
-          <div className="results-comparison">
+          <div className={`results-comparison ${!results.supportsSymptomMatching ? 'single-result' : ''}`}>
             <div className="model-results">
               <div className="result-card">
                 <h4>{results.modelPrediction.disease}</h4>
@@ -342,6 +383,7 @@ const QuickCheck = () => {
               </div>
             </div>
             
+            {results.supportsSymptomMatching && (
             <div className="symptom-results">
               <div className="result-card">
                 <h4>{results.symptomResults[0].disease}</h4>
@@ -354,6 +396,7 @@ const QuickCheck = () => {
                 </div>
               </div>
             </div>
+            )}
           </div>
           
           <div className="final-result">
@@ -363,6 +406,8 @@ const QuickCheck = () => {
               <p>
                 {results.conditionsMatch
                   ? "The AI model and your symptoms both strongly suggest this condition."
+                  : !results.supportsSymptomMatching
+                  ? "Based on the uploaded image, this is the most likely result. Please consult a dermatologist for confirmation."
                   : results.shouldUseModelPrediction
                   ? "Based on the AI model's high confidence, this condition is the most likely despite differing symptoms."
                   : "Based on the strong symptom match, symptom analysis is used as the primary indicator."}
